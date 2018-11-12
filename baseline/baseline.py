@@ -233,6 +233,7 @@ def buildModel(embeddingMatrix):
 
 
 def main():
+    # argument parsing
     parser = argparse.ArgumentParser(description="Baseline Script for SemEval")
     parser.add_argument('-config', help='Config to read details', required=True)
     args = parser.parse_args()
@@ -260,6 +261,7 @@ def main():
     LEARNING_RATE = config["learning_rate"]
     NUM_EPOCHS = config["num_epochs"]
 
+    # data preprocessing
     print("Processing training data...")
     trainIndices, trainTexts, labels = preprocessData(trainDataPath, mode="train")
     # Write normalised text to file to check if normalisation works. Disabled now. Uncomment following line to enable
@@ -277,6 +279,7 @@ def main():
     wordIndex = tokenizer.word_index
     print("Found %s unique tokens." % len(wordIndex))
 
+    # get pre-trained embeddings
     print("Populating embedding matrix...")
     embeddingMatrix = getEmbeddingMatrix(wordIndex)
 
