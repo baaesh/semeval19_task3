@@ -52,7 +52,7 @@ def get_dist_mask_tile(sentence_len, device):
 
 class Attention(nn.Module):
 
-	def __init__(self, d_model, direction, alpha, dist_mask=False, device='cuda:0'):
+	def __init__(self, d_model, direction=None, alpha=1.0, dist_mask=False, device='cuda:0'):
 		super(Attention, self).__init__()
 
 		self.direction = direction
@@ -60,7 +60,8 @@ class Attention(nn.Module):
 		self.alpha = alpha
 		self.dist_mask = dist_mask
 
-		self.scaling_factor = Variable(torch.Tensor([math.pow(d_model, 0.5)]), requires_grad=False).cuda()
+		self.scaling_factor = Variable(torch.Tensor([math.pow(d_model, 0.5)]),
+									   requires_grad=False).cuda()
 		self.softmax = nn.Softmax(dim=2)
 
 
@@ -68,10 +69,12 @@ class Attention(nn.Module):
 		batch_size, seq_len, d_model = q.size()
 		attn = torch.bmm(q, k.transpose(1, 2)) / self.scaling_factor
 
-		direct_mask_tile = get_direct_mask_tile(self.direction, seq_len, self.device)
 		rep_mask_tile = get_rep_mask_tile(rep_mask)
-		mask = rep_mask_tile * direct_mask_tile
-		if (self.dist_mask):
+		mask = rep_mask_tile
+		if self.direction is not None:
+			direct_mask_tile = get_direct_mask_tile(self.direction, seq_len, self.device)
+			mask = rep_mask_tile * direct_mask_tile
+		if self.dist_mask:
 			dist_mask_tile = get_dist_mask_tile(seq_len, self.device)
 			attn += self.alpha * dist_mask_tile
 
@@ -95,7 +98,8 @@ class MultiHeadAttention(nn.Module):
 		self.w_ks = nn.Parameter(torch.FloatTensor(self.n_head, self.d_model, self.d_k))
 		self.w_vs = nn.Parameter(torch.FloatTensor(self.n_head, self.d_model, self.d_v))
 
-		self.attention = Attention(self.d_model, direction, args.alpha, device=args.device)
+		self.attention = Attention(self.d_model, direction=direction, alpha=args.alpha,
+								   dist_mask=args.dist_mask, device=args.device)
 		self.layer_norm = nn.LayerNorm(int(self.d_k))
 		self.layer_norm2 = nn.LayerNorm(self.d_model)
 
@@ -232,7 +236,7 @@ class SentenceEncoder(nn.Module):
 
 		# forward and backward transformer block
 		self.fw_block = LayerBlock(args, direction='fw')
-		self.bw_block = LayerBlock(args, direction='bw')
+		self.bw_block = LayerBlock(args, direction=None)
 
 		# Multi-dimensional source2token self-attention
 		self.s2t_SA = Source2Token(d_h=2 * args.d_e, dropout=args.dropout)
