@@ -1,6 +1,6 @@
 import torch
 from torch import nn
-import torch.functional as F
+import torch.nn.functional as F
 
 
 # https://github.com/clcarwin/focal_loss_pytorch/blob/master/focalloss.py
