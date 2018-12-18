@@ -236,7 +236,7 @@ class SentenceEncoder(nn.Module):
 
 		# forward and backward transformer block
 		self.fw_block = LayerBlock(args, direction='fw')
-		self.bw_block = LayerBlock(args, direction=None)
+		self.bw_block = LayerBlock(args, direction='bw')
 
 		# Multi-dimensional source2token self-attention
 		self.s2t_SA = Source2Token(d_h=2 * args.d_e, dropout=args.dropout)
