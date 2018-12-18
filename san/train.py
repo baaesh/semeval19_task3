@@ -23,8 +23,8 @@ def train(args, data):
     scheduler = StepLR(optimizer, step_size=10, gamma=args.lr_gamma)
     if args.fl_loss:
         others_idx = data.LABEL.vocab.stoi['others']
-        alpha = [0.04] * args.class_size
-        alpha[others_idx] = 0.88
+        alpha = [(1.-args.fl_alpha)/3.] * args.class_size
+        alpha[others_idx] = args.fl_alpha
         criterion = FocalLoss(gamma=args.fl_gamma,
                                alpha=alpha, size_average=True)
     else:
