@@ -30,6 +30,8 @@ def train_config(parser):
     parser.add_argument('--max_epoch', type=int, default=30)
     parser.add_argument('--print_every', type=int, default=100)
     parser.add_argument('--validate_every', type=int, default=100)
+    parser.add_argument('--fl_loss', default=False, action='store_true')
+    parser.add_argument('--fl_gamma', type=float, default=2.0)
 
     return parser
 

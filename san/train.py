@@ -10,6 +10,7 @@ from config import set_args
 from data import EMO
 from model import NN4EMO
 from test import test
+from loss import FocalLoss
 
 
 def train(args, data):
@@ -19,12 +20,21 @@ def train(args, data):
     parameters = filter(lambda p: p.requires_grad, model.parameters())
     optimizer = optim.Adam(parameters, lr=args.learning_rate)
     criterion = nn.CrossEntropyLoss()
+    if args.fl_loss:
+        others_idx = data.LABEL.vocab.stoi['others']
+        alpha = [0.04] * args.class_size
+        alpha[others_idx] = 0.88
+        criterion = FocalLoss(gamma=args.fl_gamma,
+                               alpha=alpha, size_average=True)
+    else:
+        criterion = nn.CrossEntropyLoss()
 
     writer = SummaryWriter(log_dir='runs/' + args.model_time)
 
     model.train()
 
     acc, loss, size, last_epoch = 0, 0, 0, -1
+    fl_loss = 0
     max_dev_acc = 0
     max_dev_f1 = 0
     best_model = None
@@ -37,8 +47,13 @@ def train(args, data):
             pred = model(batch.text)
 
             optimizer.zero_grad()
-            batch_loss = criterion(pred, batch.label)
-            loss += batch_loss.item()
+
+            if args.fl_loss:
+                batch_loss = criterion(pred, batch.label)
+                loss += batch_loss.item()
+            else:
+                batch_loss = criterion(pred, batch.label)
+                loss += batch_loss.item()
             batch_loss.backward()
             optimizer.step()
 
