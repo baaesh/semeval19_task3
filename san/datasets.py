@@ -137,8 +137,8 @@ class EMO(data.Dataset):
         #if shuffle: random.shuffle(examples)
         #dev_index = -1 * int(dev_ratio * len(examples))
 
-        return (cls(text_field, label_field, examples=valid_examples),
-                cls(text_field, label_field, examples=train_examples))
+        return (cls(text_field, label_field, examples=train_examples),
+                cls(text_field, label_field, examples=valid_examples))
 
 
     @classmethod
