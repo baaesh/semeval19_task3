@@ -73,13 +73,14 @@ class NN4EMO(nn.Module):
 		return outputs
 
 	def seg_seq(self, seq):
-		seg_batch = []
+		seg_idx_batch = []
 		for i in range(len(seq)):
-			idx = torch.tensor(0).to(self.device)
-			seg = []
+			idx = 0
+			seg_idx = []
 			for j in range(len(seq[i])):
-				seg.append(self.seg_emb(idx))
+				seg_idx.append(idx)
 				if (seq[i][j] == self.data.TEXT.vocab.stoi['<eos>']):
 					idx = idx + 1
-			seg_batch.append(torch.stack(seg))
-		return torch.stack(seg_batch)
+			seg_idx_batch.append(torch.tensor(seg_idx))
+		seg_idx_batch = torch.stack(seg_idx_batch)
+		return self.seg_emb(seg_idx_batch)
