@@ -4,6 +4,7 @@ import torch
 from time import gmtime, strftime
 
 from torch import nn, optim
+from torch.optim.lr_scheduler import StepLR
 from tensorboardX import SummaryWriter
 
 from config import set_args
@@ -19,6 +20,7 @@ def train(args, data):
 
     parameters = filter(lambda p: p.requires_grad, model.parameters())
     optimizer = optim.Adam(parameters, lr=args.learning_rate)
+    scheduler = StepLR(optimizer, step_size=10, gamma=args.lr_gamma)
     if args.fl_loss:
         others_idx = data.LABEL.vocab.stoi['others']
         alpha = [0.04] * args.class_size
@@ -42,6 +44,7 @@ def train(args, data):
     iterator = data.train_iter
     for epoch in range(args.max_epoch):
         print('epoch: ', epoch + 1)
+        scheduler.step()
         for i, batch in enumerate(iterator):
             pred = model(batch.text)
 

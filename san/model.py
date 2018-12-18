@@ -20,6 +20,7 @@ class NN4EMO(nn.Module):
 	def __init__(self, args, data):
 		super(NN4EMO, self).__init__()
 
+		self.args = args
 		self.class_size = args.class_size
 		self.dropout = args.dropout
 		self.d_e = args.d_e
@@ -27,7 +28,6 @@ class NN4EMO(nn.Module):
 		self.device = args.device
 		self.data = data
 
-		# TODO: vocab
 		self.word_emb = nn.Embedding(args.word_vocab_size, args.word_dim)
 		# initialize word embedding with GloVe
 		self.word_emb.weight.data.copy_(data.TEXT.vocab.vectors)
@@ -36,8 +36,8 @@ class NN4EMO(nn.Module):
 		# <unk> vectors is randomly initialized
 		nn.init.uniform_(self.word_emb.weight.data[0], -0.05, 0.05)
 
-		# TODO: segment embedding and sentiment embedding (optional)
-		self.seg_emb = nn.Embedding(3, args.word_dim)
+		if args.seg_emb:
+			self.seg_emb = nn.Embedding(3, args.word_dim)
 
 		self.sentence_encoder = SentenceEncoder(args)
 
@@ -53,9 +53,11 @@ class NN4EMO(nn.Module):
 
 		# (batch, seq_len, word_dim)
 		x = self.word_emb(seq)
-		seg_emb = self.seg_seq(seq)
 
-		x = x + seg_emb
+		if self.args.seg_emb:
+			seg_emb = self.seg_seq(seq)
+
+			x = x + seg_emb
 
 		# (batch, seq_len, 1)
 		rep_mask = get_rep_mask(lens, self.device)

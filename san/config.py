@@ -10,6 +10,7 @@ def model_config(parser):
 
     parser.add_argument('--dist_mask', default=False, action='store_true')
     parser.add_argument('--alpha', default=1.5, type=float)
+    parser.add_argument('--seg_emb', default=False, action='store_true')
 
     return parser
 
@@ -26,6 +27,7 @@ def train_config(parser):
     parser.add_argument('--dropout', type=float, default=0.1)
     parser.add_argument('--batch_size', type=int, default=64)
     parser.add_argument('--learning_rate', type=float, default=0.001)
+    parser.add_argument('--lr_gamma', type=float, default=1.0)
     parser.add_argument('--weight_decay', type=float, default=0)
     parser.add_argument('--max_epoch', type=int, default=30)
     parser.add_argument('--print_every', type=int, default=100)
