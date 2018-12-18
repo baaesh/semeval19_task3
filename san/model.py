@@ -82,5 +82,5 @@ class NN4EMO(nn.Module):
 				if (seq[i][j] == self.data.TEXT.vocab.stoi['<eos>']):
 					idx = idx + 1
 			seg_idx_batch.append(torch.tensor(seg_idx))
-		seg_idx_batch = torch.stack(seg_idx_batch)
+		seg_idx_batch = torch.stack(seg_idx_batch).to(self.device)
 		return self.seg_emb(seg_idx_batch)
