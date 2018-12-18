@@ -26,7 +26,6 @@ class NN4EMO(nn.Module):
 		self.d_e = args.d_e
 		self.d_ff = args.d_ff
 		self.device = args.device
-		self.data = data
 
 		self.word_emb = nn.Embedding(args.word_vocab_size, args.word_dim)
 		# initialize word embedding with GloVe
@@ -38,6 +37,7 @@ class NN4EMO(nn.Module):
 
 		if args.seg_emb:
 			self.seg_emb = nn.Embedding(3, args.word_dim)
+			self.eos_idx = data.TEXT.vocab.stoi['<eos>']
 
 		self.sentence_encoder = SentenceEncoder(args)
 
@@ -79,7 +79,7 @@ class NN4EMO(nn.Module):
 			seg_idx = []
 			for j in range(len(seq[i])):
 				seg_idx.append(idx)
-				if (seq[i][j] == self.data.TEXT.vocab.stoi['<eos>']):
+				if (seq[i][j] == self.eos_idx):
 					idx = idx + 1
 			seg_idx_batch.append(torch.tensor(seg_idx))
 		seg_idx_batch = torch.stack(seg_idx_batch).to(self.device)
