@@ -96,6 +96,8 @@ def main():
     data = EMO(args)
     setattr(args, 'word_vocab_size', len(data.TEXT.vocab))
     setattr(args, 'model_time', strftime('%H:%M:%S', gmtime()))
+    setattr(args, 'class_size', len(data.LABEL.vocab))
+    print(args.class_size)
 
     best_model, max_dev_f1 = train(args, data)
 

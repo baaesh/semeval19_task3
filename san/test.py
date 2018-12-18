@@ -24,7 +24,7 @@ def test(model, data, args):
         size += len(pred)
 
     preds = np.concatenate(preds)
-    labels = to_categorical(np.concatenate(labels))
+    labels = to_categorical(np.concatenate(labels), num_classes=args.class_size)
 
     acc_, prec, rec, f1 = getMetrics(preds, labels, data)
     acc /= size

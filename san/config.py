@@ -15,7 +15,7 @@ def model_config(parser):
 
 
 def data_config(parser):
-    parser.add_argument('--class_size', default=4, type=int)
+    #parser.add_argument('--class_size', default=4, type=int)
     return parser
 
 
