@@ -2,10 +2,9 @@ import numpy as np
 from torch import nn
 from keras.utils import to_categorical
 
-def test(model, data, args):
+def test(model, data, criterion, args):
     iterator = data.dev_iter
 
-    criterion = nn.CrossEntropyLoss()
     model.eval()
     acc, loss, size = 0, 0, 0
 
@@ -44,7 +43,7 @@ def getMetrics(predictions, ground, data):
     """
     num_classes = len(data.LABEL.vocab)
     # [0.1, 0.3 , 0.2, 0.1] -> [0, 1, 0, 0]
-    discretePredictions = to_categorical(predictions.argmax(axis=1))
+    discretePredictions = to_categorical(predictions.argmax(axis=1), num_classes=num_classes)
 
     truePositives = np.sum(discretePredictions * ground, axis=0)
     falsePositives = np.sum(np.clip(discretePredictions - ground, 0, 1), axis=0)

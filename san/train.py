@@ -71,7 +71,7 @@ def train(args, data):
 
             if (i + 1) % args.validate_every == 0:
                 c = (i + 1) // args.validate_every
-                dev_loss, dev_acc, dev_f1 = test(model, data, args)
+                dev_loss, dev_acc, dev_f1 = test(model, data, criterion, args)
                 if dev_acc > max_dev_acc:
                     max_dev_acc = dev_acc
                 if dev_f1 > max_dev_f1:
@@ -97,7 +97,7 @@ def main():
     setattr(args, 'word_vocab_size', len(data.TEXT.vocab))
     setattr(args, 'model_time', strftime('%H:%M:%S', gmtime()))
     setattr(args, 'class_size', len(data.LABEL.vocab))
-    print(args.class_size)
+    #print(args.class_size)
 
     best_model, max_dev_f1 = train(args, data)
 
