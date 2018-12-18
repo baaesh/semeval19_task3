@@ -130,13 +130,15 @@ class EMO(data.Dataset):
             Remaining keyword arguments: Passed to the splits method of
                 Dataset.
         """
-        trainDataPath = './data/train.txt'
-        examples = cls(text_field, label_field, path=trainDataPath, mode='train', **kwargs).examples
-        if shuffle: random.shuffle(examples)
-        dev_index = -1 * int(dev_ratio * len(examples))
+        trainDataPath = './data/train_split.txt'
+        validDataPath = './data/valid_split.txt'
+        train_examples = cls(text_field, label_field, path=trainDataPath, mode='train', **kwargs).examples
+        valid_examples = cls(text_field, label_field, path=validDataPath, mode='train', **kwargs).examples
+        #if shuffle: random.shuffle(examples)
+        #dev_index = -1 * int(dev_ratio * len(examples))
 
-        return (cls(text_field, label_field, examples=examples[:dev_index]),
-                cls(text_field, label_field, examples=examples[dev_index:]))
+        return (cls(text_field, label_field, examples=valid_examples),
+                cls(text_field, label_field, examples=train_examples))
 
 
     @classmethod

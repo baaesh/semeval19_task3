@@ -19,7 +19,6 @@ def train(args, data):
 
     parameters = filter(lambda p: p.requires_grad, model.parameters())
     optimizer = optim.Adam(parameters, lr=args.learning_rate)
-    criterion = nn.CrossEntropyLoss()
     if args.fl_loss:
         others_idx = data.LABEL.vocab.stoi['others']
         alpha = [0.04] * args.class_size
