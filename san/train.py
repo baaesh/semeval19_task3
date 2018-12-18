@@ -78,7 +78,7 @@ def train(args, data):
                     max_dev_acc = dev_acc
                 if dev_f1 > max_dev_f1:
                     max_dev_f1 = dev_f1
-                    #best_model = copy.deepcopy(model)
+                    best_model = copy.deepcopy(model)
                 writer.add_scalar('loss/dev', dev_loss, c)
                 writer.add_scalar('acc/dev', dev_acc, c)
                 writer.add_scalar('f1/dev', dev_f1, c)
@@ -99,7 +99,6 @@ def main():
     setattr(args, 'word_vocab_size', len(data.TEXT.vocab))
     setattr(args, 'model_time', strftime('%H:%M:%S', gmtime()))
     setattr(args, 'class_size', len(data.LABEL.vocab))
-    #print(args.class_size)
 
     best_model, max_dev_f1 = train(args, data)
 
