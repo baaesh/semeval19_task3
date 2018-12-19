@@ -254,6 +254,8 @@ class SentenceEncoder(nn.Module):
 		u_f = self.fw_block(inputs, rep_mask)
 		u_b = elmo_emb
 		#u_b = self.bw_block(inputs, rep_mask)
+		print(u_f.size())
+		print(u_b.size())
 
 		u = torch.cat([u_f, u_b], dim=-1)
 
