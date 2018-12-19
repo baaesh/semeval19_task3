@@ -20,7 +20,8 @@ class EMO():
         self.train_iter, self.dev_iter = \
             data.BucketIterator.splits((self.train, self.dev),
                                        batch_size=args.batch_size,
-                                       device=args.device)
+                                       device=args.device,
+                                       repeat=False)
 
         filehandler = open('./data/vocab.obj', 'wb')
         pickle.dump(self.TEXT.vocab, filehandler)
@@ -48,4 +49,5 @@ class EMO_test():
                           batch_size=args.batch_size,
                           device=args.device,
                           shuffle=False,
-                          sort=False)
+                          sort=False,
+                          repeat=False)
