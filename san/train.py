@@ -67,7 +67,7 @@ def train(args, data):
                 c = (i + 1) // args.print_every
                 writer.add_scalar('loss/train', loss, c)
                 writer.add_scalar('acc/train', acc, c)
-                print(f'train loss: {loss:.3f} / train acc: {acc:.3f}')
+                print(f'{i+1} steps - train loss: {loss:.3f} / train acc: {acc:.3f}')
                 acc, loss, size = 0, 0, 0
 
             if (i + 1) % args.validate_every == 0:
