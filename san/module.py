@@ -295,7 +295,7 @@ class ELMo(nn.Module):
 		if self.feed_forward:
 			for i in range(self.num_emb):
 				emb = elmo_embs[i]
-				pwff = getattr(self, 'pwff_', str(i))
+				pwff = getattr(self, 'pwff_' + str(i))
 				emb = pwff(self.dropout(emb))
 				embs.append(emb)
 		else:
