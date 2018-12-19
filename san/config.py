@@ -21,8 +21,8 @@ def model_config(parser):
 
 def data_config(parser):
     #parser.add_argument('--class_size', default=4, type=int)
-    parser.add_argument('--elmo_option_path')
-    parser.add_argument('--elmo_weight_path')
+    parser.add_argument('--elmo_option_path', default='data/elmo/elmo_options.json')
+    parser.add_argument('--elmo_weight_path', default='data/elmo/elmo_weights.hdf5')
 
     return parser
 
