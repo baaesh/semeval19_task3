@@ -243,7 +243,7 @@ class SentenceEncoder(nn.Module):
 		self.elmo = ELMo(args)
 
 		# Multi-dimensional source2token self-attention
-		self.s2t_SA = Source2Token(d_h=args.d_e + args.elmo_dim, dropout=args.dropout)
+		self.s2t_SA = Source2Token(d_h=2 * args.d_e, dropout=args.dropout)
 
 
 	def forward(self, inputs, rep_mask, batch_raw):
@@ -265,6 +265,22 @@ class SentenceEncoder(nn.Module):
 
 		return outs
 
+class PositionwiseFeedForwardReduce(nn.Module):
+
+	def __init__(self, d_i, d_h, dropout=0):
+		super(PositionwiseFeedForwardReduce, self).__init__()
+		self.w_0 = nn.Conv1d(d_i, d_h, 1)
+		self.w_1 = nn.Conv1d(d_h, d_h, 1)
+		self.dropout = nn.Dropout(dropout)
+		self.relu = nn.ReLU()
+
+	def forward(self, x):
+		output = self.relu(self.w_0(x.transpose(1, 2)))
+		output = self.dropout(output)
+		output = self.w_1(output)
+		output = self.dropout(output).transpose(2, 1)
+		return output
+
 
 class ELMo(nn.Module):
 
@@ -282,7 +298,7 @@ class ELMo(nn.Module):
 
 		if self.feed_forward:
 			for i in range(self.num_emb):
-				pwff = PositionwiseFeedForward(
+				pwff = PositionwiseFeedForwardReduce(
 					args.elmo_dim, args.d_e, dropout=args.dropout)
 				setattr(self, 'pwff_' + str(i), pwff)
 
