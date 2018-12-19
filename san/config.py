@@ -13,7 +13,7 @@ def model_config(parser):
     parser.add_argument('--seg_emb', default=False, action='store_true')
 
     parser.add_argument('--elmo_num', type=int, default=1)
-    parser.add_argument('--no_elmo_feed_forward', dest='elmo_feed_forward', action='store_false')
+    parser.add_argument('--elmo_feed_forward', default=False, action='store_true')
     parser.add_argument('--elmo_dim', type=int, default=1024)
 
     return parser

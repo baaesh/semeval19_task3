@@ -194,7 +194,7 @@ class LayerBlock(nn.Module):
 
 		self.attn_layer = MultiHeadAttention(args, direction)
 		self.fusion_gate = FusionGate(args.d_e, args.dropout)
-		self.feed_forward = PositionwiseFeedForward(args.d_e, args.d_ff, args.dropout)
+		self.feed_forward = PositionwiseFeedForward(args.d_e, args.d_ff, dropout=args.dropout)
 
 
 	def forward(self, x, rep_mask):
@@ -243,7 +243,7 @@ class SentenceEncoder(nn.Module):
 		self.elmo = ELMo(args)
 
 		# Multi-dimensional source2token self-attention
-		self.s2t_SA = Source2Token(d_h=2 * args.d_e, dropout=args.dropout)
+		self.s2t_SA = Source2Token(d_h=args.d_e + args.elmo_dim, dropout=args.dropout)
 
 
 	def forward(self, inputs, rep_mask, batch_raw):
@@ -254,8 +254,6 @@ class SentenceEncoder(nn.Module):
 		u_f = self.fw_block(inputs, rep_mask)
 		u_b = elmo_emb
 		#u_b = self.bw_block(inputs, rep_mask)
-		print(u_f.size())
-		print(u_b.size())
 
 		u = torch.cat([u_f, u_b], dim=-1)
 
@@ -285,7 +283,7 @@ class ELMo(nn.Module):
 		if self.feed_forward:
 			for i in range(self.num_emb):
 				pwff = PositionwiseFeedForward(
-					args.elmo_dim, args.d_e, args.dropout)
+					args.elmo_dim, args.d_e, dropout=args.dropout)
 				setattr(self, 'pwff_' + str(i), pwff)
 
 	def forward(self, x_plain):
