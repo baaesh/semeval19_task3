@@ -35,7 +35,6 @@ def train(args, data):
     model.train()
 
     acc, loss, size, last_epoch = 0, 0, 0, -1
-    fl_loss = 0
     max_dev_acc = 0
     max_dev_f1 = 0
     best_model = None

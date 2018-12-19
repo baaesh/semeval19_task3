@@ -16,8 +16,7 @@ def predict(model, data):
     preds = []
     softmax = nn.Softmax(dim=1)
     for batch in iter(iterator):
-        #print(batch.text.size())
-        pred = model(batch.text)
+        pred = model(batch.text, batch.raw)
         pred = softmax(pred)
         preds.append(pred.detach().cpu().numpy())
     preds = np.concatenate(preds)

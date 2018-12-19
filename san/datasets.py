@@ -145,6 +145,6 @@ class EMO(data.Dataset):
 
 
     @classmethod
-    def getTestData(cls, text_field):
+    def getTestData(cls, raw_field, text_field):
         testDataPath = './data/devwithoutlabels.txt'
-        return cls(text_field, None, path=testDataPath, mode='test')
+        return cls(raw_field, text_field, None, path=testDataPath, mode='test')

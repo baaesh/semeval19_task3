@@ -8,7 +8,6 @@ from keras.preprocessing.text import Tokenizer
 
 class EMO():
     def __init__(self, args):
-        tokenizer = Tokenizer(num_words=20000)
         self.RAW = data.RawField()
         self.TEXT = data.Field(batch_first=True, include_lengths=True, lower=False)
         self.LABEL = data.Field(sequential=False, unk_token=None)
@@ -31,6 +30,7 @@ class EMO():
 
 class EMO_test():
     def __init__(self, args):
+        self.RAW = data.RawField()
         self.TEXT = data.Field(batch_first=True, include_lengths=True, lower=True)
         self.LABEL = data.Field(sequential=False, unk_token=None)
 
@@ -39,7 +39,7 @@ class EMO_test():
         filehandler = open('./data/label.obj', 'rb')
         self.LABEL.vocab = pickle.load(filehandler)
 
-        self.test = datasets.EMO.getTestData(self.TEXT)
+        self.test = datasets.EMO.getTestData(self.RAW, self.TEXT)
 
         #for i in range(100):
         #    print(self.test.examples[i].text)
