@@ -48,7 +48,7 @@ class NN4EMO(nn.Module):
 		self.dropout = nn.Dropout(args.dropout)
 		self.relu = nn.ReLU()
 
-	def forward(self, batch):
+	def forward(self, batch, batch_raw):
 		seq, lens = batch
 
 		# (batch, seq_len, word_dim)
@@ -63,7 +63,7 @@ class NN4EMO(nn.Module):
 		rep_mask = get_rep_mask(lens, self.device)
 
 		# (batch, seq_len, 4 * d_e)
-		s = self.sentence_encoder(x, rep_mask)
+		s = self.sentence_encoder(x, rep_mask, batch_raw)
 
 		s = self.dropout(s)
 		outputs = self.relu(self.layer_norm(self.fc(s)))

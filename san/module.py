@@ -4,6 +4,8 @@ from torch.autograd import Variable
 import torch.nn.init as init
 import math
 
+from allennlp.modules.elmo import Elmo, batch_to_ids
+
 
 # Masked softmax
 def masked_softmax(vec, mask, dim=1):
@@ -235,18 +237,23 @@ class SentenceEncoder(nn.Module):
 		super(SentenceEncoder, self).__init__()
 
 		# forward and backward transformer block
-		self.fw_block = LayerBlock(args, direction='fw')
-		self.bw_block = LayerBlock(args, direction='bw')
+		self.fw_block = LayerBlock(args, direction=None)
+		#self.bw_block = LayerBlock(args, direction='bw')
+
+		self.elmo = ELMo(args)
 
 		# Multi-dimensional source2token self-attention
 		self.s2t_SA = Source2Token(d_h=2 * args.d_e, dropout=args.dropout)
 
 
-	def forward(self, inputs, rep_mask):
+	def forward(self, inputs, rep_mask, batch_raw):
 		batch, seq_len, d_e = inputs.size()
 
+		elmo_emb = self.elmo(batch_raw)[0]
+
 		u_f = self.fw_block(inputs, rep_mask)
-		u_b = self.bw_block(inputs, rep_mask)
+		u_b = elmo_emb
+		#u_b = self.bw_block(inputs, rep_mask)
 
 		u = torch.cat([u_f, u_b], dim=-1)
 
@@ -259,8 +266,38 @@ class SentenceEncoder(nn.Module):
 		return outs
 
 
+class ELMo(nn.Module):
 
+	def __init__(self, args):
+		super(ELMo, self).__init__()
+		options_file = args.elmo_option_path
+		weight_file = args.elmo_weight_path
 
+		self.device = torch.device(args.device)
+		self.num_emb = args.elmo_num
+		self.feed_forward = args.elmo_feed_forward
+		self.dropout = nn.Dropout(args.dropout)
 
+		self.elmo = Elmo(options_file, weight_file, self.num_emb, dropout=0)
 
+		if self.feed_forward:
+			for i in range(self.num_emb):
+				pwff = PositionwiseFeedForward(
+					args.elmo_dim, args.d_e, args.dropout)
+				setattr(self, 'pwff_' + str(i), pwff)
 
+	def forward(self, x_plain):
+		x = batch_to_ids(x_plain).to(self.device)
+
+		elmo_embs = self.elmo(x)['elmo_representations']
+
+		embs = []
+		if self.feed_forward:
+			for i in range(self.num_emb):
+				emb = elmo_embs[i]
+				pwff = getattr(self, 'pwff_', str(i))
+				emb = pwff(self.dropout(emb))
+				embs.append(emb)
+		else:
+			embs = elmo_embs
+		return embs

@@ -38,8 +38,7 @@ def main():
     model.load_state_dict(torch.load('./saved_models/' + model_name))
 
     preds = predict(model, data)
-    for i in range(len(preds)):
-        preds[i][0] += 0.9
+
     maxs = preds.max(axis=1)
     print(maxs)
     preds = preds.argmax(axis=1)

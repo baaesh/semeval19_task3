@@ -9,10 +9,11 @@ from keras.preprocessing.text import Tokenizer
 class EMO():
     def __init__(self, args):
         tokenizer = Tokenizer(num_words=20000)
-        self.TEXT = data.Field(batch_first=True, include_lengths=True, lower=True)
+        self.RAW = data.RawField()
+        self.TEXT = data.Field(batch_first=True, include_lengths=True, lower=False)
         self.LABEL = data.Field(sequential=False, unk_token=None)
 
-        self.train, self.dev = datasets.EMO.splits(self.TEXT, self.LABEL)
+        self.train, self.dev = datasets.EMO.splits(self.RAW, self.TEXT, self.LABEL)
 
         self.TEXT.build_vocab(self.train, self.dev, vectors=GloVe(name='840B', dim=300))
         self.LABEL.build_vocab(self.train)

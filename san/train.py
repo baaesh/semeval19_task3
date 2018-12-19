@@ -46,7 +46,7 @@ def train(args, data):
         print('epoch: ', epoch + 1)
         scheduler.step()
         for i, batch in enumerate(iterator):
-            pred = model(batch.text)
+            pred = model(batch.text, batch.raw)
 
             optimizer.zero_grad()
 
