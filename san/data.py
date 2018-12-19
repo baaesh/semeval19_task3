@@ -9,7 +9,7 @@ from keras.preprocessing.text import Tokenizer
 class EMO():
     def __init__(self, args):
         tokenizer = Tokenizer(num_words=20000)
-        self.RAW = data.RawField()
+        self.RAW = data.RawField(is_target=False)
         self.TEXT = data.Field(batch_first=True, include_lengths=True, lower=False)
         self.LABEL = data.Field(sequential=False, unk_token=None)
 
