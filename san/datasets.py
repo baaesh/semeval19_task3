@@ -109,13 +109,6 @@ class EMO(data.Dataset):
                 raws.append(conv.split())
                 conversations.append(conv.lower())
 
-        ##### debug ######
-        max_len = 0
-        for raw in raws:
-            if max_len < len(raw):
-                max_len = len(raw)
-        print("max_len: " + str(max_len))
-
         examples = []
         if mode == 'train':
             for i in range(len(conversations)):

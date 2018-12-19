@@ -62,7 +62,7 @@ class NN4EMO(nn.Module):
 
 			x = x + seg_emb
 
-		if self.pos_emb:
+		if self.args.pos_emb:
 			batch_size, seq_len, _ = x.size()
 			pos_emb = self.pos_emb[:seq_len]
 			x = x + torch.stack([pos_emb] * batch_size).to(self.device)
