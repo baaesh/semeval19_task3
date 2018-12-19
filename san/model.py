@@ -88,7 +88,10 @@ class NN4EMO(nn.Module):
 			for j in range(len(seq[i])):
 				seg_idx.append(idx)
 				if (seq[i][j] == self.eos_idx):
-					idx = idx + 1
+					if self.args.seg_emb_share:
+						idx = 1 - idx
+					else:
+						idx = idx + 1
 			seg_idx_batch.append(torch.tensor(seg_idx))
 		seg_idx_batch = torch.stack(seg_idx_batch).to(self.device)
 		return self.seg_emb(seg_idx_batch)
