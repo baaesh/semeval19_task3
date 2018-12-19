@@ -29,6 +29,7 @@ def main():
     data = EMO_test(args)
 
     setattr(args, 'word_vocab_size', len(data.TEXT.vocab))
+    setattr(args, 'class_size', 4)
 
     model_name = 'SAN4EMO_09:37:44_0.8524917233506443.pt'
 

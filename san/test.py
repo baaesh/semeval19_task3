@@ -63,7 +63,7 @@ def getMetrics(predictions, ground, data):
         recall = truePositives[c] / (truePositives[c] + falseNegatives[c])
         macroRecall += recall
         f1 = (2 * recall * precision) / (precision + recall) if (precision + recall) > 0 else 0
-        print("Class %s : Precision : %.3f, Recall : %.3f, F1 : %.3f" % (data.LABEL.vocab.itos[c], precision, recall, f1))
+        print("    Class %s : Precision : %.3f, Recall : %.3f, F1 : %.3f" % (data.LABEL.vocab.itos[c], precision, recall, f1))
 
     macroPrecision /= 3
     macroRecall /= 3
@@ -91,7 +91,7 @@ def getMetrics(predictions, ground, data):
     ground = ground.argmax(axis=1)
     accuracy = np.mean(predictions == ground)
 
-    print("Accuracy : %.4f, Micro Precision : %.4f, Micro Recall : %.4f, Micro F1 : %.4f" % (accuracy, microPrecision, microRecall, microF1))
+    print("    Accuracy : %.4f, Micro Precision : %.4f, Micro Recall : %.4f, Micro F1 : %.4f" % (accuracy, microPrecision, microRecall, microF1))
     return accuracy, microPrecision, microRecall, microF1
 
 
