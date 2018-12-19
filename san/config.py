@@ -11,6 +11,7 @@ def model_config(parser):
     parser.add_argument('--dist_mask', default=False, action='store_true')
     parser.add_argument('--alpha', default=1.5, type=float)
     parser.add_argument('--seg_emb', default=False, action='store_true')
+    parser.add_argument('--pos_emb', default=False, action='store_true')
 
     parser.add_argument('--elmo_num', type=int, default=1)
     parser.add_argument('--elmo_feed_forward', default=False, action='store_true')

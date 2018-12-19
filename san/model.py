@@ -39,6 +39,9 @@ class NN4EMO(nn.Module):
 			self.seg_emb = nn.Embedding(3, args.word_dim)
 			self.eos_idx = data.TEXT.vocab.stoi['<eos>']
 
+		if args.pos_emb:
+			self.pos_emb = nn.Parameter(torch.rand(512, args.word_dim))
+
 		self.sentence_encoder = SentenceEncoder(args)
 
 		self.fc = nn.Linear(args.d_e * 4, args.d_e)
@@ -58,6 +61,11 @@ class NN4EMO(nn.Module):
 			seg_emb = self.seg_seq(seq)
 
 			x = x + seg_emb
+
+		if self.pos_emb:
+			batch_size, seq_len, _ = x.size()
+			pos_emb = self.pos_emb[:seq_len]
+			x = x + torch.stack([pos_emb] * batch_size).to(self.device)
 
 		# (batch, seq_len, 1)
 		rep_mask = get_rep_mask(lens, self.device)
