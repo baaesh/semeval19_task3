@@ -3,13 +3,16 @@ from torchtext import data
 import datasets
 from torchtext.vocab import GloVe
 from nltk import word_tokenize
+from nltk.tokenize import TweetTokenizer
 from keras.preprocessing.text import Tokenizer
 
 
 class EMO():
     def __init__(self, args):
+        tokenizer = TweetTokenizer
         self.RAW = data.RawField()
-        self.TEXT = data.Field(batch_first=True, include_lengths=True, lower=False)
+        self.TEXT = data.Field(batch_first=True, include_lengths=True,
+                               lower=True, tokenize=tokenizer.tokenize)
         self.LABEL = data.Field(sequential=False, unk_token=None)
 
         self.train, self.dev = datasets.EMO.splits(self.RAW, self.TEXT, self.LABEL)
@@ -31,8 +34,10 @@ class EMO():
 
 class EMO_test():
     def __init__(self, args):
+        tokenizer = TweetTokenizer
         self.RAW = data.RawField()
-        self.TEXT = data.Field(batch_first=True, include_lengths=True, lower=True)
+        self.TEXT = data.Field(batch_first=True, include_lengths=True,
+                               lower=True, tokenize=tokenizer.tokenize)
         self.LABEL = data.Field(sequential=False, unk_token=None)
 
         filehandler = open('./data/vocab.obj', 'rb')
@@ -42,8 +47,6 @@ class EMO_test():
 
         self.test = datasets.EMO.getTestData(self.RAW, self.TEXT)
 
-        #for i in range(100):
-        #    print(self.test.examples[i].text)
         self.test_iter = \
             data.Iterator(self.test,
                           batch_size=args.batch_size,

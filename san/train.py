@@ -15,8 +15,14 @@ from loss import FocalLoss
 
 
 def train(args, data):
+    if args.ss_emb:
+        ss_vectors = torch.load(args.ss_vector_path)
+        print(ss_vectors.size())
+    else:
+        ss_vectors = None
+
     device = torch.device(args.device)
-    model = NN4EMO(args, data).to(device)
+    model = NN4EMO(args, data, ss_vectors).to(device)
 
     parameters = filter(lambda p: p.requires_grad, model.parameters())
     optimizer = optim.Adam(parameters, lr=args.learning_rate)

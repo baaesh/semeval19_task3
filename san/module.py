@@ -237,25 +237,25 @@ class SentenceEncoder(nn.Module):
 		super(SentenceEncoder, self).__init__()
 
 		# forward and backward transformer block
-		self.fw_block = LayerBlock(args, direction=None)
-		#self.bw_block = LayerBlock(args, direction='bw')
+		self.glove_block = LayerBlock(args, direction=None)
+		self.ss_block = LayerBlock(args, direction=None)
 
 		self.elmo = ELMo(args)
 
 		# Multi-dimensional source2token self-attention
-		self.s2t_SA = Source2Token(d_h=2 * args.d_e, dropout=args.dropout)
+		self.s2t_SA = Source2Token(d_h=3 * args.d_e, dropout=args.dropout)
 
 
-	def forward(self, inputs, rep_mask, batch_raw):
+	def forward(self, inputs, inputs_ss, rep_mask, batch_raw):
 		batch, seq_len, d_e = inputs.size()
 
 		elmo_emb = self.elmo(batch_raw)[0]
 
-		u_f = self.fw_block(inputs, rep_mask)
-		u_b = elmo_emb
-		#u_b = self.bw_block(inputs, rep_mask)
+		u_g = self.glove_block(inputs, rep_mask)
+		u_s = self.ss_block(inputs_ss, rep_mask)
+		u_e = elmo_emb
 
-		u = torch.cat([u_f, u_b], dim=-1)
+		u = torch.cat([u_g, u_s, u_e], dim=-1)
 
 		pooling = nn.MaxPool2d((seq_len, 1), stride=1)
 		pool_s = pooling(u * rep_mask).view(batch, -1)

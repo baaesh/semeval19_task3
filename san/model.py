@@ -17,7 +17,7 @@ def get_rep_mask(lengths, device):
 
 class NN4EMO(nn.Module):
 
-	def __init__(self, args, data):
+	def __init__(self, args, data, ss_vectors=None):
 		super(NN4EMO, self).__init__()
 
 		self.args = args
@@ -27,13 +27,22 @@ class NN4EMO(nn.Module):
 		self.d_ff = args.d_ff
 		self.device = args.device
 
-		self.word_emb = nn.Embedding(args.word_vocab_size, args.word_dim)
+		# GloVe embedding
+		self.glove_emb = nn.Embedding(args.word_vocab_size, args.word_dim)
 		# initialize word embedding with GloVe
-		self.word_emb.weight.data.copy_(data.TEXT.vocab.vectors)
+		self.glove_emb.weight.data.copy_(data.TEXT.vocab.vectors)
 		# fine-tune the word embedding
-		self.word_emb.weight.requires_grad = False
+		if not args.tune_embeddings:
+			self.glove_emb.weight.requires_grad = False
 		# <unk> vectors is randomly initialized
-		nn.init.uniform_(self.word_emb.weight.data[0], -0.05, 0.05)
+		nn.init.uniform_(self.glove_emb.weight.data[0], -0.05, 0.05)
+
+		# sentiment specific embedding
+		self.ss_emb = nn.Embedding(args.word_vocab_size, args.word_dim)
+		if args.ss_emb:
+			self.ss_emb.weight.data.copy_(ss_vectors)
+			if not args.ss_emb_tune:
+				self.ss_emb.weight.requires_grad = False
 
 		if args.seg_emb:
 			self.seg_emb = nn.Embedding(3, args.word_dim)
@@ -44,7 +53,7 @@ class NN4EMO(nn.Module):
 
 		self.sentence_encoder = SentenceEncoder(args)
 
-		self.fc = nn.Linear(args.d_e * 4, args.d_e)
+		self.fc = nn.Linear(args.d_e * 6, args.d_e)
 		self.fc_out = nn.Linear(args.d_e, args.class_size)
 
 		self.layer_norm = nn.LayerNorm(args.d_e)
@@ -55,23 +64,26 @@ class NN4EMO(nn.Module):
 		seq, lens = batch
 
 		# (batch, seq_len, word_dim)
-		x = self.word_emb(seq)
+		x_g = self.glove_emb(seq)
+		x_s = self.ss_emb(seq)
 
 		if self.args.seg_emb:
 			seg_emb = self.seg_seq(seq)
-
-			x = x + seg_emb
+			x_g = x_g + seg_emb
+			x_s = x_s + seg_emb
 
 		if self.args.pos_emb:
-			batch_size, seq_len, _ = x.size()
+			batch_size, seq_len, _ = x_g.size()
 			pos_emb = self.pos_emb[:seq_len]
-			x = x + torch.stack([pos_emb] * batch_size).to(self.device)
+			pos_emb_batch = torch.stack([pos_emb] * batch_size).to(self.device)
+			x_g = x_g + pos_emb_batch
+			x_s = x_s + pos_emb_batch
 
 		# (batch, seq_len, 1)
 		rep_mask = get_rep_mask(lens, self.device)
 
 		# (batch, seq_len, 4 * d_e)
-		s = self.sentence_encoder(x, rep_mask, batch_raw)
+		s = self.sentence_encoder(x_g, rep_mask, batch_raw, x_s)
 
 		s = self.dropout(s)
 		outputs = self.relu(self.layer_norm(self.fc(s)))

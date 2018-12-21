@@ -4,6 +4,7 @@ import re
 import random
 
 from torchtext import data
+from nltk.tokenize import TweetTokenizer
 
 class EMO(data.Dataset):
 
@@ -74,6 +75,7 @@ class EMO(data.Dataset):
         raws = []
         conversations = []
         labels = []
+        tokenizer = TweetTokenizer()
         with io.open(dataFilePath, encoding="utf8") as finput:
             finput.readline()
             for line in finput:
@@ -106,8 +108,8 @@ class EMO(data.Dataset):
                 conv = re.sub(duplicateSpacePattern, ' ', conv)
 
                 indices.append(int(line[0]))
-                raws.append(conv.split())
-                conversations.append(conv.lower())
+                raws.append(tokenizer.tokenize(conv))
+                conversations.append(conv)
 
         examples = []
         if mode == 'train':
