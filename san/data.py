@@ -9,7 +9,7 @@ from keras.preprocessing.text import Tokenizer
 
 class EMO():
     def __init__(self, args):
-        tokenizer = TweetTokenizer
+        tokenizer = TweetTokenizer()
         self.RAW = data.RawField()
         self.TEXT = data.Field(batch_first=True, include_lengths=True,
                                lower=True, tokenize=tokenizer.tokenize)
@@ -34,7 +34,7 @@ class EMO():
 
 class EMO_test():
     def __init__(self, args):
-        tokenizer = TweetTokenizer
+        tokenizer = TweetTokenizer()
         self.RAW = data.RawField()
         self.TEXT = data.Field(batch_first=True, include_lengths=True,
                                lower=True, tokenize=tokenizer.tokenize)

@@ -122,7 +122,7 @@ class EMO(data.Dataset):
 
 
     @classmethod
-    def splits(cls, raw_field, text_field, label_field, dev_ratio=.1, shuffle=True, root='.', **kwargs):
+    def splits(cls, raw_field, text_field, label_field, root='.', **kwargs):
         """Create dataset objects for splits of the dataset.
         Arguments:
             text_field: The field that will be used for the sentence.
@@ -139,8 +139,6 @@ class EMO(data.Dataset):
         validDataPath = './data/valid_split.txt'
         train_examples = cls(raw_field, text_field, label_field, path=trainDataPath, mode='train', **kwargs).examples
         valid_examples = cls(raw_field, text_field, label_field, path=validDataPath, mode='train', **kwargs).examples
-        #if shuffle: random.shuffle(examples)
-        #dev_index = -1 * int(dev_ratio * len(examples))
 
         return (cls(raw_field, text_field, label_field, examples=train_examples),
                 cls(raw_field, text_field, label_field, examples=valid_examples))
