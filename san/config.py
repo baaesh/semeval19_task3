@@ -21,6 +21,9 @@ def model_config(parser):
     parser.add_argument('--ss_emb', default=False, action='store_true')
     parser.add_argument('--ss_emb_tune', default=False, action='store_true')
 
+    parser.add_argument('--lstm_num_layers', type=int, default=1)
+    parser.add_argument('--lstm_hidden_dim', type=int, default=150)
+
     return parser
 
 

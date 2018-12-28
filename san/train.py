@@ -17,7 +17,6 @@ from loss import FocalLoss
 def train(args, data):
     if args.ss_emb:
         ss_vectors = torch.load(args.ss_vector_path)
-        print(ss_vectors.size())
     else:
         ss_vectors = None
 
@@ -55,12 +54,9 @@ def train(args, data):
 
             optimizer.zero_grad()
 
-            if args.fl_loss:
-                batch_loss = criterion(pred, batch.label)
-                loss += batch_loss.item()
-            else:
-                batch_loss = criterion(pred, batch.label)
-                loss += batch_loss.item()
+            batch_loss = criterion(pred, batch.label)
+            loss += batch_loss.item()
+
             batch_loss.backward()
             optimizer.step()
 

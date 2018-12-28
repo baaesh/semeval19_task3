@@ -83,7 +83,7 @@ class NN4EMO(nn.Module):
 		rep_mask = get_rep_mask(lens, self.device)
 
 		# (batch, seq_len, 4 * d_e)
-		s = self.sentence_encoder(x_g, rep_mask, batch_raw, x_s)
+		s = self.sentence_encoder(x_g, x_s, batch_raw, rep_mask, lens)
 
 		s = self.dropout(s)
 		outputs = self.relu(self.layer_norm(self.fc(s)))
