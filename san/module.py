@@ -66,7 +66,7 @@ class Attention(nn.Module):
         self.dist_mask = dist_mask
 
         self.scaling_factor = Variable(torch.Tensor([math.pow(d_model, 0.5)]),
-                                       requires_grad=False).cuda()
+                                       requires_grad=False).to(device)
         self.softmax = nn.Softmax(dim=2)
 
 
