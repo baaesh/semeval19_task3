@@ -4,7 +4,6 @@ import datasets
 from torchtext.vocab import GloVe
 from nltk import word_tokenize
 from nltk.tokenize import TweetTokenizer
-from keras.preprocessing.text import Tokenizer
 
 
 class EMO():
