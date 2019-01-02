@@ -31,7 +31,7 @@ def main():
     setattr(args, 'word_vocab_size', len(data.TEXT.vocab))
     setattr(args, 'class_size', 4)
 
-    model_name = 'SAN4EMO_08:40:18_0.7735.pt'
+    model_name = 'SAN4EMO_10:36:58_0.8110.pt'
 
     device = torch.device(args.device)
     model = NN4EMO(args, data).to(device)

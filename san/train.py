@@ -1,14 +1,18 @@
+import io
 import os
 import copy
+import pickle
+import numpy as np
 import torch
 from time import gmtime, strftime
 
 from torch import nn, optim
 from torch.optim.lr_scheduler import StepLR
 from tensorboardX import SummaryWriter
+from torchtext import data
 
 from config import set_args
-from data import EMO
+from data import EMO, EMO_test
 from model import NN4EMO
 from test import test
 from loss import FocalLoss
@@ -91,6 +95,86 @@ def train(args, data):
     return best_model, max_dev_f1
 
 
+def predict(model, data):
+    iterator = data.test_iter
+    model.eval()
+    preds = []
+    softmax = nn.Softmax(dim=1)
+    for batch in iter(iterator):
+        pred = model(batch.text, batch.raw)
+        pred = softmax(pred)
+        preds.append(pred.detach().cpu().numpy())
+    preds = np.concatenate(preds)
+
+    return preds
+
+
+def submission(model_name):
+    args = set_args()
+    data = EMO_test(args)
+
+    setattr(args, 'word_vocab_size', len(data.TEXT.vocab))
+    setattr(args, 'class_size', 4)
+
+    device = torch.device(args.device)
+    model = NN4EMO(args, data).to(device)
+    model.load_state_dict(torch.load('./saved_models/' + model_name))
+
+    preds = predict(model, data)
+
+    maxs = preds.max(axis=1)
+    print(maxs)
+    preds = preds.argmax(axis=1)
+
+    if not os.path.exists('submissions'):
+        os.makedirs('submissions')
+
+    solutionPath = './submissions/' + model_name + '.txt'
+    testDataPath = './data/raw/devwithoutlabels.txt'
+    with io.open(solutionPath, "w", encoding="utf8") as fout:
+        fout.write('\t'.join(["id", "turn1", "turn2", "turn3", "label"]) + '\n')
+        with io.open(testDataPath, encoding="utf8") as fin:
+            fin.readline()
+            for lineNum, line in enumerate(fin):
+                fout.write('\t'.join(line.strip().split('\t')[:4]) + '\t')
+                fout.write(data.LABEL.vocab.itos[preds[lineNum]] + '\n')
+
+
+def build_sswe_vectors():
+    vector_path = 'data/sswe/Twitter_07:09:28.pt'
+    vocab_path = 'data/sswe/Twitter_vocab.txt'
+    TEXT = data.Field(batch_first=True, include_lengths=True, lower=True)
+
+    filehandler = open('data/vocab.obj', 'rb')
+    TEXT.vocab = pickle.load(filehandler)
+
+    embedding = torch.load(vector_path)
+
+    itos = []
+    stoi = {}
+    idx = 0
+    with open(vocab_path, 'r', encoding='utf-8') as f:
+        lines = f.readlines()
+        for line in lines:
+            line = line.strip()
+            itos.append(line)
+            stoi[line] = idx
+            idx += 1
+
+    print('Vocab Size: ' + str(len(TEXT.vocab)))
+    vectors = []
+    for i in range(len(TEXT.vocab)):
+        try:
+            index = stoi[TEXT.vocab.itos[i]]
+        except:
+            index = 0 # <unk> index
+        vectors.append(embedding[index])
+
+    vectors = torch.stack(vectors)
+
+    torch.save(vectors, 'data/sswe/sswe.pt')
+
+
 def main():
     args = set_args()
 
@@ -101,13 +185,18 @@ def main():
     setattr(args, 'model_time', strftime('%H:%M:%S', gmtime()))
     setattr(args, 'class_size', len(data.LABEL.vocab))
 
+    build_sswe_vectors()
+
     best_model, max_dev_f1 = train(args, data)
 
     if not os.path.exists('saved_models'):
         os.makedirs('saved_models')
-    torch.save(best_model, f'saved_models/SAN4EMO_{args.model_time}_{max_dev_f1:.4f}.pt')
+    model_name = f'saved_models/SAN4EMO_{args.model_time}_{max_dev_f1:.4f}.pt'
+    torch.save(best_model, model_name)
 
     print('training finished!')
+
+    submission(model_name)
 
 
 if __name__ == '__main__':
