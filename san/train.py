@@ -31,7 +31,7 @@ def train(args, data):
         alpha = [(1.-args.fl_alpha)/3.] * args.class_size
         alpha[others_idx] = args.fl_alpha
         criterion = FocalLoss(gamma=args.fl_gamma,
-                               alpha=alpha, size_average=True)
+                               alpha=alpha, size_average=True).to(device)
     else:
         criterion = nn.CrossEntropyLoss()
 
