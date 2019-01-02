@@ -27,9 +27,7 @@ class FocalLoss(nn.Module):
 
         if self.alpha is not None:
             if self.alpha.type()!=input.data.type():
-                self.alpha = self.alpha.type_as(input.data)
-            print(self.alpha.get_device())
-            print(target.get_device())
+                self.alpha = self.alpha.type_as(input.data).to(input.get_device())
             at = self.alpha.gather(0,target.data.view(-1))
             logpt = logpt * at
 
