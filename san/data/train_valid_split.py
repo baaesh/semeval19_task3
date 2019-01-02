@@ -2,7 +2,7 @@ import os
 import io
 import random
 
-dataFilePath = 'train.txt'
+dataFilePath = 'raw/train.txt'
 others = []
 happy = []
 angry = []
@@ -31,7 +31,7 @@ print(f'others: {len(others)/total_len} '
 
 dev_ratio = 0.1
 dev_num = total_len * dev_ratio
-others_num = int(dev_num * 0.88)
+others_num = int(dev_num * 0.86)
 happy_num = int((dev_num - others_num)/3)
 angry_num = happy_num
 sad_num = happy_num
@@ -47,10 +47,10 @@ train_set = others[others_num:] + happy[happy_num:] + angry[angry_num:] + sad[sa
 random.shuffle(dev_set)
 random.shuffle(train_set)
 
-with open('train_split.txt', 'a', encoding='utf-8') as f:
+with open('train_split.txt', 'w', encoding='utf-8') as f:
     for line in train_set:
         f.write(line)
 
-with open('valid_split.txt', 'a', encoding='utf-8') as f:
+with open('valid_split.txt', 'w', encoding='utf-8') as f:
     for line in dev_set:
         f.write(line)

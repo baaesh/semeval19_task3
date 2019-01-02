@@ -338,17 +338,26 @@ class SentenceEncoder(nn.Module):
 
     def __init__(self, args):
         super(SentenceEncoder, self).__init__()
-
+        self.args = args
         # forward and backward transformer block
-        self.glove_block = LayerBlock(args, direction=None)
+        #self.glove_block = LayerBlock(args, direction=None)
         #self.ss_block = LayerBlock(args, direction=None)
 
+        self.glove_lstm = BiLSTM(args)
         self.ss_lstm = BiLSTM(args)
 
         self.elmo = ELMo(args)
 
         # Multi-dimensional source2token self-attention
         self.s2t_SA = Source2Token(d_h=3 * args.d_e, dropout=args.dropout)
+        # vector-based multi-head attention
+        #for i in range(args.num_heads):
+        #    s2t = Source2Token(d_h=3 * args.d_e, dropout=args.dropout)
+        #    setattr(self, f's2tSA_{i}', s2t)
+
+
+    def get_s2tSA(self, i):
+        return getattr(self, f's2tSA_{i}')
 
 
     def forward(self, inputs, inputs_ss, batch_raw, rep_mask, lengths):
@@ -356,7 +365,9 @@ class SentenceEncoder(nn.Module):
 
         elmo_emb = self.elmo(batch_raw)[0]
 
-        u_g = self.glove_block(inputs, rep_mask)
+        #u_g = self.glove_block(inputs, rep_mask)
+        #u_s = self.ss_block(inputs_ss, rep_mask)
+        u_g = self.glove_lstm(inputs, lengths)
         u_s = self.ss_lstm(inputs_ss, lengths)
         u_e = elmo_emb
 
@@ -366,6 +377,13 @@ class SentenceEncoder(nn.Module):
         pool_s = pooling(u * rep_mask).view(batch, -1)
         s2t_s = self.s2t_SA(u, rep_mask)
 
+        #s2t_s = []
+        #for i in range(self.args.num_heads):
+        #    s2tSA = self.get_s2tSA(i)
+        #    s2t = s2tSA(u, rep_mask)
+        #    s2t_s.append(s2t)
+
         outs = torch.cat([s2t_s, pool_s], dim=-1)
+        #outs = torch.cat(s2t_s, dim=-1)
 
         return outs

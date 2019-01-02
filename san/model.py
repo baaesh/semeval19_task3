@@ -53,7 +53,8 @@ class NN4EMO(nn.Module):
 
 		self.sentence_encoder = SentenceEncoder(args)
 
-		self.fc = nn.Linear(args.d_e * 6, args.d_e)
+		self.fc1 = nn.Linear(2 * args.d_e * 3, args.d_e)
+		self.fc2 = nn.Linear(2 * args.d_e * 3 + args.d_e, args.d_e)
 		self.fc_out = nn.Linear(args.d_e, args.class_size)
 
 		self.layer_norm = nn.LayerNorm(args.d_e)
@@ -85,9 +86,10 @@ class NN4EMO(nn.Module):
 		# (batch, seq_len, 4 * d_e)
 		s = self.sentence_encoder(x_g, x_s, batch_raw, rep_mask, lens)
 
-		s = self.dropout(s)
-		outputs = self.relu(self.layer_norm(self.fc(s)))
-		outputs = self.dropout(outputs)
+		outputs = self.fc1(self.dropout(s))
+		outputs = self.dropout(self.relu(self.layer_norm(outputs)))
+		#outputs = self.fc2(torch.cat([self.dropout(s), outputs], dim=-1))
+		#outputs = self.dropout(self.relu(self.layer_norm(outputs)))
 		outputs = self.fc_out(outputs)
 
 		return outputs

@@ -45,7 +45,7 @@ def train_config(parser):
     parser.add_argument('--learning_rate', type=float, default=0.001)
     parser.add_argument('--lr_gamma', type=float, default=1.0)
     parser.add_argument('--weight_decay', type=float, default=0)
-    parser.add_argument('--max_epoch', type=int, default=30)
+    parser.add_argument('--max_epoch', type=int, default=10)
     parser.add_argument('--print_every', type=int, default=100)
     parser.add_argument('--validate_every', type=int, default=100)
     parser.add_argument('--no_fl_loss', dest='fl_loss', action='store_false')

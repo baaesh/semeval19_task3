@@ -105,7 +105,7 @@ def main():
 
     if not os.path.exists('saved_models'):
         os.makedirs('saved_models')
-    torch.save(best_model, f'saved_models/SAN4EMO_{args.model_time}_{max_dev_f1}.pt')
+    torch.save(best_model, f'saved_models/SAN4EMO_{args.model_time}_{max_dev_f1:.4f}.pt')
 
     print('training finished!')
 

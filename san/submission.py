@@ -31,7 +31,7 @@ def main():
     setattr(args, 'word_vocab_size', len(data.TEXT.vocab))
     setattr(args, 'class_size', 4)
 
-    model_name = 'SAN4EMO_03:35:40_0.7846153868726015.pt'
+    model_name = 'SAN4EMO_08:40:18_0.7735.pt'
 
     device = torch.device(args.device)
     model = NN4EMO(args, data).to(device)
@@ -47,7 +47,7 @@ def main():
         os.makedirs('submissions')
 
     solutionPath = './submissions/' + model_name + '.txt'
-    testDataPath = './data/devwithoutlabels.txt'
+    testDataPath = './data/raw/devwithoutlabels.txt'
     with io.open(solutionPath, "w", encoding="utf8") as fout:
         fout.write('\t'.join(["id", "turn1", "turn2", "turn3", "label"]) + '\n')
         with io.open(testDataPath, encoding="utf8") as fin:
