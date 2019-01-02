@@ -54,8 +54,6 @@ def train(args, data):
 
             optimizer.zero_grad()
 
-            print(pred.get_device())
-            print(batch.label.get_device())
             batch_loss = criterion(pred, batch.label)
             loss += batch_loss.item()
 
