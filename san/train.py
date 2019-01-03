@@ -109,12 +109,8 @@ def predict(model, data):
     return preds
 
 
-def submission(model_name):
-    args = set_args()
+def submission(args, model_name):
     data = EMO_test(args)
-
-    setattr(args, 'word_vocab_size', len(data.TEXT.vocab))
-    setattr(args, 'class_size', 4)
 
     device = torch.device(args.device)
     model = NN4EMO(args, data).to(device)
@@ -196,7 +192,7 @@ def main():
 
     print('training finished!')
 
-    submission(model_name)
+    submission(args, model_name)
 
 
 if __name__ == '__main__':
