@@ -288,13 +288,13 @@ class ELMo(nn.Module):
         return embs
 
 
-class BiLSTM(nn.Module):
+class LSTMEncoder(nn.Module):
 
-    def __init__(self, args):
-        super(BiLSTM, self).__init__()
+    def __init__(self, args, input_dim=None):
+        super(LSTMEncoder, self).__init__()
 
         self.args = args
-        self.emb_dim = args.word_dim
+        self.emb_dim = input_dim if input_dim is not None else args.word_dim
 
         for i in range(args.lstm_num_layers):
             if i == 0:
@@ -304,7 +304,7 @@ class BiLSTM(nn.Module):
             lstm_layer = nn.LSTM(
                 input_size=lstm_input_dim,
                 hidden_size=args.lstm_hidden_dim,
-                bidirectional=True,
+                bidirectional=args.lstm_bidirection,
                 batch_first=True
             )
             setattr(self, f'lstm_layer_{i}', lstm_layer)
@@ -336,23 +336,30 @@ class BiLSTM(nn.Module):
  
 class SentenceEncoder(nn.Module):
 
-    def __init__(self, args):
+    def __init__(self, args, data):
         super(SentenceEncoder, self).__init__()
         self.args = args
+        self.device = args.device
         # forward and backward transformer block
         #self.glove_block = LayerBlock(args, direction=None)
         #self.ss_block = LayerBlock(args, direction=None)
 
-        self.glove_lstm = BiLSTM(args)
-        self.ss_lstm = BiLSTM(args)
+        self.glove_lstm = LSTMEncoder(args, input_dim=args.word_dim * 2)
+        self.ss_lstm = LSTMEncoder(args)
 
         self.elmo = ELMo(args)
 
+        if args.seg_emb:
+            self.seg_emb_g = nn.Embedding(3, args.word_dim * 2)
+            self.seg_emb_s = nn.Embedding(3, args.word_dim)
+            self.seg_emb_e = nn.Embedding(3, args.word_dim)
+            self.eos_idx = data.TEXT.vocab.stoi['<eos>']
+
         # Multi-dimensional source2token self-attention
-        self.s2t_SA = Source2Token(d_h=3 * args.d_e, dropout=args.dropout)
+        self.s2t_SA = Source2Token(d_h=2 * args.d_e, dropout=args.dropout)
         # vector-based multi-head attention
         #for i in range(args.num_heads):
-        #    s2t = Source2Token(d_h=3 * args.d_e, dropout=args.dropout)
+        #    s2t = Source2Token(d_h=2 * args.d_e, dropout=args.dropout)
         #    setattr(self, f's2tSA_{i}', s2t)
 
 
@@ -360,10 +367,33 @@ class SentenceEncoder(nn.Module):
         return getattr(self, f's2tSA_{i}')
 
 
-    def forward(self, inputs, inputs_ss, batch_raw, rep_mask, lengths):
+    def seg_seq(self, seq):
+        seg_idx_batch = []
+        for i in range(len(seq)):
+            idx = 0
+            seg_idx = []
+            for j in range(len(seq[i])):
+                seg_idx.append(idx)
+                if (seq[i][j] == self.eos_idx):
+                    if self.args.seg_emb_share:
+                        idx = 1 - idx
+                    else:
+                        idx = idx + 1
+            seg_idx_batch.append(torch.tensor(seg_idx))
+        seg_idx_batch = torch.stack(seg_idx_batch).to(self.device)
+        return seg_idx_batch
+
+
+    def forward(self, inputs, inputs_ss, batch_raw, rep_mask, lengths, seq):
         batch, seq_len, d_e = inputs.size()
 
-        elmo_emb = self.elmo(batch_raw)[0]
+        elmo_emb_w, elmo_emb = self.elmo(batch_raw)
+        inputs = torch.cat([inputs, elmo_emb_w], dim=-1)
+
+        if self.args.seg_emb:
+            seg_idx = self.seg_seq(seq)
+            inputs = inputs + self.seg_emb_g(seg_idx)
+            inputs_ss = inputs_ss + self.seg_emb_s(seg_idx)
 
         #u_g = self.glove_block(inputs, rep_mask)
         #u_s = self.ss_block(inputs_ss, rep_mask)
@@ -371,7 +401,7 @@ class SentenceEncoder(nn.Module):
         u_s = self.ss_lstm(inputs_ss, lengths)
         u_e = elmo_emb
 
-        u = torch.cat([u_g, u_s, u_e], dim=-1)
+        u = torch.cat([u_g, u_s], dim=-1)
 
         pooling = nn.MaxPool2d((seq_len, 1), stride=1)
         pool_s = pooling(u * rep_mask).view(batch, -1)
