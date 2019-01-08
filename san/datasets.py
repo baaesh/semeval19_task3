@@ -182,11 +182,8 @@ class EMO(data.Dataset):
             Remaining keyword arguments: Passed to the splits method of
                 Dataset.
         """
-        train_examples = cls(raw_field, text_field, label_field, path=trainDataPath, mode='train', **kwargs).examples
-        valid_examples = cls(raw_field, text_field, label_field, path=validDataPath, mode='train', **kwargs).examples
-
-        return (cls(raw_field, text_field, label_field, examples=train_examples),
-                cls(raw_field, text_field, label_field, examples=valid_examples))
+        return (cls(raw_field, text_field, label_field, path=trainDataPath, mode='train', **kwargs),
+                cls(raw_field, text_field, label_field, path=validDataPath, mode='train', **kwargs))
 
 
     @classmethod

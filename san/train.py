@@ -128,7 +128,7 @@ def submission(args, model_name):
     data = EMO_test(args)
 
     device = torch.device(args.device)
-    model = NN4EMO(args, data).to(device)
+    model = NN4EMO_FUSION(args, data).to(device)
     model.load_state_dict(torch.load('./saved_models/' + model_name))
 
     preds = predict(model, data)
@@ -154,8 +154,8 @@ def submission(args, model_name):
 def build_sswe_vectors():
     vector_path = 'data/sswe/Twitter_07:09:28.pt'
     vocab_path = 'data/sswe/Twitter_vocab.txt'
-    TEXT = data.Field(batch_first=True, include_lengths=True, lower=True)
 
+    TEXT = data.Field(batch_first=True, include_lengths=True, lower=True)
     filehandler = open('data/vocab.obj', 'rb')
     TEXT.vocab = pickle.load(filehandler)
 
