@@ -5,6 +5,7 @@ import torch.nn.functional as F
 
 # https://github.com/clcarwin/focal_loss_pytorch/blob/master/focalloss.py
 class FocalLoss(nn.Module):
+
     def __init__(self, gamma=0, alpha=None, size_average=True):
         super(FocalLoss, self).__init__()
         self.gamma = gamma
@@ -12,6 +13,7 @@ class FocalLoss(nn.Module):
         if isinstance(alpha,(float,int)): self.alpha = torch.Tensor([alpha,1-alpha])
         if isinstance(alpha,list): self.alpha = torch.Tensor(alpha)
         self.size_average = size_average
+
 
     def forward(self, input, target):
         if input.dim()>2:
@@ -34,3 +36,85 @@ class FocalLoss(nn.Module):
         loss = -1 * (1-pt)**self.gamma * logpt
         if self.size_average: return loss.mean()
         else: return loss.sum()
+
+
+class MFELoss(nn.Module):
+
+    def __init__(self, others_idx):
+        super(MFELoss, self).__init__()
+        self.others_idx = others_idx
+        self.softmax = nn.Softmax(dim=1)
+
+
+    def forward(self, preds, target):
+        batch_size, _ = preds.size()
+
+        preds = self.softmax(preds)
+
+        fpe = 0
+        fne = 0
+        fpe_num = 0
+        fne_num = 0
+        for i in range(batch_size):
+            if target[i] == self.others_idx:
+                fne += 1/2 * ((1-preds[i][self.others_idx])**2
+                             + (preds[i][self.others_idx]-1)**2)
+                fne_num += 1
+            else:
+                fpe += 1/2 * ((-preds[i][self.others_idx])**2
+                             + (preds[i][self.others_idx])**2)
+                fpe_num += 1
+        fpe = fpe / fpe_num
+        fne = fne / fne_num
+
+        loss = 0.0 * fpe + 1.0 * fne
+        #print(loss)
+        return loss
+
+
+class AdaptiveMFELoss(nn.Module):
+
+    def __init__(self, data):
+        super(AdaptiveMFELoss, self).__init__()
+        self.others_idx = data.LABEL.vocab.stoi['others']
+        self.happy_idx = data.LABEL.vocab.stoi['happy']
+        self.sad_idx = data.LABEL.vocab.stoi['sad']
+        self.angry_idx = data.LABEL.vocab.stoi['angry']
+        self.softmax = nn.Softmax(dim=1)
+        self.sigmoid = nn.Sigmoid()
+
+    def forward(self, outputs, target):
+        batch_size, _ = outputs.size()
+
+        preds = self.softmax(outputs)
+        #preds = self.sigmoid(outputs)
+
+        fpe = 0
+        fne = 0
+        fpe_num = 0
+        fne_num = 0
+        for i in range(batch_size):
+            if target[i] == self.others_idx:
+                fne += (preds[i][self.others_idx] - 1) ** 2
+                fpe += (preds[i][self.happy_idx]) ** 2
+                fpe += (preds[i][self.sad_idx]) ** 2
+                fpe += (preds[i][self.angry_idx]) ** 2
+                fne_num += 1
+                fpe_num += 3
+            elif target[i] == self.happy_idx:
+                fpe += (preds[i][self.sad_idx]) ** 2
+                fpe += (preds[i][self.angry_idx]) ** 2
+                fpe_num += 2
+            elif target[i] == self.sad_idx:
+                fpe += (preds[i][self.happy_idx]) ** 2
+                fpe += (preds[i][self.angry_idx]) ** 2
+                fpe_num += 2
+            else:
+                fpe += (preds[i][self.sad_idx]) ** 2
+                fpe += (preds[i][self.happy_idx]) ** 2
+                fpe_num += 2
+        fpe = fpe / fpe_num
+        fne = fne / fne_num
+
+        loss = 0.25 * fpe + 0.5 * fne
+        return loss
