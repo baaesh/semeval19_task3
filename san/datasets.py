@@ -24,19 +24,43 @@ class EMO(data.Dataset):
         text_field.preprocessing = data.Pipeline(self.clean_str)
 
         if mode == 'train':
-            fields = [('raw', raw_field), ('text', text_field), ('label', label_field)]
+            fields = [('raw', raw_field),
+                      ('raw_c', raw_field),
+                      ('raw_s', raw_field),
+                      ('text', text_field),
+                      ('context', text_field),
+                      ('sent', text_field),
+                      ('label', label_field)]
         else:
-            fields = [('raw', raw_field), ('text', text_field)]
+            fields = [('raw', raw_field),
+                      ('raw_c', raw_field),
+                      ('raw_s', raw_field),
+                      ('text', text_field),
+                      ('context', text_field),
+                      ('sent', text_field)]
 
         if examples is None:
             dataset = self.preprocessData(path, mode)
             examples = []
             if mode == 'train':
                 examples += [
-                    data.Example.fromlist([line[0], line[1], line[2]], fields) for line in dataset]
+                    data.Example.fromlist([line[0],
+                                           line[1],
+                                           line[2],
+                                           line[3],
+                                           line[4],
+                                           line[5],
+                                           line[6]],
+                                          fields) for line in dataset]
             else:
                 examples += [
-                    data.Example.fromlist([line[0], line[1]], fields) for line in dataset]
+                    data.Example.fromlist([line[0],
+                                           line[1],
+                                           line[2],
+                                           line[3],
+                                           line[4],
+                                           line[5]],
+                                          fields) for line in dataset]
         super(EMO, self).__init__(examples, fields, **kwargs)
 
 
@@ -73,7 +97,11 @@ class EMO(data.Dataset):
         """
         indices = []
         raws = []
+        raws_c = []
+        raws_s = []
         conversations = []
+        contexts = []
+        sents = []
         labels = []
         tokenizer = TweetTokenizer()
         with io.open(dataFilePath, encoding="utf8") as finput:
@@ -102,27 +130,46 @@ class EMO(data.Dataset):
                     labels.append(label)
 
                 conv = ' <eos> '.join(line[1:4])
+                context = ' <eos> '.join(line[1:3])
+                sent = line[3]
 
                 # Remove any duplicate spaces
                 duplicateSpacePattern = re.compile(r'\ +')
                 conv = re.sub(duplicateSpacePattern, ' ', conv)
+                context = re.sub(duplicateSpacePattern, ' ', context)
+                sent = re.sub(duplicateSpacePattern, ' ', sent)
 
                 indices.append(int(line[0]))
                 raws.append(tokenizer.tokenize(conv))
+                raws_c.append(tokenizer.tokenize(context))
+                raws_s.append(tokenizer.tokenize(sent))
                 conversations.append(conv)
+                contexts.append(context)
+                sents.append(sent)
 
         examples = []
         if mode == 'train':
             for i in range(len(conversations)):
-                examples.append([raws[i], conversations[i], labels[i]])
+                examples.append([raws[i],
+                                 raws_c[i],
+                                 raws_s[i],
+                                 conversations[i],
+                                 contexts[i],
+                                 sents[i],
+                                 labels[i]])
         else:
             for i in range(len(conversations)):
-                examples.append([raws[i], conversations[i]])
+                examples.append([raws[i],
+                                 raws_c[i],
+                                 raws_s[i],
+                                 conversations[i],
+                                 contexts[i],
+                                 sents[i]])
         return examples
 
 
     @classmethod
-    def splits(cls, raw_field, text_field, label_field, root='.', **kwargs):
+    def splits(cls, raw_field, text_field, label_field, trainDataPath, validDataPath, root='.', **kwargs):
         """Create dataset objects for splits of the dataset.
         Arguments:
             text_field: The field that will be used for the sentence.
@@ -135,8 +182,6 @@ class EMO(data.Dataset):
             Remaining keyword arguments: Passed to the splits method of
                 Dataset.
         """
-        trainDataPath = './data/train_split.txt'
-        validDataPath = './data/valid_split.txt'
         train_examples = cls(raw_field, text_field, label_field, path=trainDataPath, mode='train', **kwargs).examples
         valid_examples = cls(raw_field, text_field, label_field, path=validDataPath, mode='train', **kwargs).examples
 
