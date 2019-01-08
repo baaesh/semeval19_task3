@@ -11,7 +11,7 @@ def test(model, data, criterion, args):
     preds = []
     labels = []
     for batch in iter(iterator):
-        pred = model(batch.text, batch.raw)
+        pred = model(batch)
 
         batch_loss = criterion(pred, batch.label)
         loss += batch_loss.item()

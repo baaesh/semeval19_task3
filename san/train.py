@@ -13,9 +13,9 @@ from torchtext import data
 
 from config import set_args
 from data import EMO, EMO_test
-from model import NN4EMO
+from model import NN4EMO, NN4EMO_FUSION
 from test import test
-from loss import FocalLoss
+from loss import FocalLoss, MFELoss, AdaptiveMFELoss
 
 
 def train(args, data):
@@ -25,19 +25,30 @@ def train(args, data):
         ss_vectors = None
 
     device = torch.device(args.device)
-    model = NN4EMO(args, data, ss_vectors).to(device)
+    if args.fusion:
+        model = NN4EMO_FUSION(args, data, ss_vectors).to(device)
+    else:
+        model = NN4EMO(args, data, ss_vectors).to(device)
 
     parameters = filter(lambda p: p.requires_grad, model.parameters())
     optimizer = optim.Adam(parameters, lr=args.learning_rate)
     scheduler = StepLR(optimizer, step_size=10, gamma=args.lr_gamma)
     if args.fl_loss:
         others_idx = data.LABEL.vocab.stoi['others']
-        alpha = [(1.-args.fl_alpha)/3.] * args.class_size
-        alpha[others_idx] = args.fl_alpha
+        if args.fl_alpha is not None:
+            alpha = [(1.-args.fl_alpha)/3.] * args.class_size
+            alpha[others_idx] = args.fl_alpha
+        else:
+            alpha = None
         criterion = FocalLoss(gamma=args.fl_gamma,
                                alpha=alpha, size_average=True).to(device)
     else:
         criterion = nn.CrossEntropyLoss()
+
+    if args.mfe_loss:
+        others_idx = data.LABEL.vocab.stoi['others']
+        #mfe_loss = MFELoss(others_idx)
+        mfe_loss = AdaptiveMFELoss(data)
 
     writer = SummaryWriter(log_dir='runs/' + args.model_time)
 
@@ -54,11 +65,15 @@ def train(args, data):
         print('epoch: ', epoch + 1)
         scheduler.step()
         for i, batch in enumerate(iterator):
-            pred = model(batch.text, batch.raw)
+            pred = model(batch)
 
             optimizer.zero_grad()
 
             batch_loss = criterion(pred, batch.label)
+            if args.mfe_loss:
+                #print(batch_loss)
+                batch_loss += mfe_loss(pred, batch.label)
+
             loss += batch_loss.item()
 
             batch_loss.backward()
