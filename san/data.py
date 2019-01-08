@@ -14,7 +14,8 @@ class EMO():
                                lower=True, tokenize=tokenizer.tokenize)
         self.LABEL = data.Field(sequential=False, unk_token=None)
 
-        self.train, self.dev = datasets.EMO.splits(self.RAW, self.TEXT, self.LABEL)
+        self.train, self.dev = datasets.EMO.splits(self.RAW, self.TEXT, self.LABEL,
+                                                   args.train_data_path, args.valid_data_path)
 
         self.TEXT.build_vocab(self.train, self.dev, vectors=GloVe(name='840B', dim=300))
         self.LABEL.build_vocab(self.train)
