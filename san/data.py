@@ -1,10 +1,11 @@
+import copy
 import pickle
 from torchtext import data
-import datasets
-from torchtext.vocab import GloVe
+from torchtext.vocab import GloVe, FastText
 from nltk import word_tokenize
 from nltk.tokenize import TweetTokenizer
 
+import datasets
 
 class EMO():
     def __init__(self, args):
@@ -17,7 +18,14 @@ class EMO():
         self.train, self.dev = datasets.EMO.splits(self.RAW, self.TEXT, self.LABEL,
                                                    args.train_data_path, args.valid_data_path)
 
-        self.TEXT.build_vocab(self.train, self.dev, vectors=GloVe(name='840B', dim=300))
+        self.TEXT.build_vocab(self.train, self.dev, vectors=GloVe(name='twitter.27B', dim=200))
+
+        if args.fasttext:
+            self.FASTTEXT = data.Field(batch_first=True, include_lengths=True,
+                                       lower=True, tokenize=tokenizer.tokenize)
+            self.FASTTEXT.vocab = copy.deepcopy(self.TEXT.vocab)
+            self.FASTTEXT.vocab.set_vectors(self.FASTTEXT.vocab.stoi,
+                                            vectors=FastText(language='en'), dim=300)
         self.LABEL.build_vocab(self.train)
 
         self.train_iter, self.dev_iter = \

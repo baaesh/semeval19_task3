@@ -20,6 +20,10 @@ def model_config(parser):
 
     parser.add_argument('--ss_emb', default=False, action='store_true')
     parser.add_argument('--ss_emb_tune', default=False, action='store_true')
+    parser.add_argument('--fasttext', default=False, action='store_true')
+    parser.add_argument('--fasttext_tune', default=False, action='store_true')
+    parser.add_argument('--word2vec', default=False, action='store_true')
+    parser.add_argument('--word2vec_tune', default=False, action='store_true')
 
     parser.add_argument('--no_lstm_bidirection', dest='lstm_bidirection', action='store_false')
     parser.add_argument('--lstm_num_layers', type=int, default=1)

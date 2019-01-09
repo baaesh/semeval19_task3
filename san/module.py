@@ -344,7 +344,7 @@ class SentenceEncoder(nn.Module):
         #self.glove_block = LayerBlock(args, direction=None)
         #self.ss_block = LayerBlock(args, direction=None)
 
-        self.glove_lstm = LSTMEncoder(args, input_dim=args.word_dim * 2)
+        self.glove_lstm = LSTMEncoder(args, input_dim=args.word_dim * 2 - 100)
         self.ss_lstm = LSTMEncoder(args)
 
         self.elmo = ELMo(args)

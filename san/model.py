@@ -1,5 +1,7 @@
 import torch
 import torch.nn as nn
+import emoji
+import gensim.models as gsm
 
 from module import *
 
@@ -28,7 +30,7 @@ class NN4EMO(nn.Module):
 		self.device = args.device
 
 		# GloVe embedding
-		self.glove_emb = nn.Embedding(args.word_vocab_size, args.word_dim)
+		self.glove_emb = nn.Embedding(args.word_vocab_size, args.word_dim - 100)
 		# initialize word embedding with GloVe
 		self.glove_emb.weight.data.copy_(data.TEXT.vocab.vectors)
 		# fine-tune the word embedding
@@ -42,6 +44,23 @@ class NN4EMO(nn.Module):
 		if args.ss_emb:
 			self.ss_emb.weight.data.copy_(ss_vectors)
 			if not args.ss_emb_tune:
+				self.ss_emb.weight.requires_grad = False
+		if args.fasttext:
+			self.ss_emb.weight.data.copy_(data.FASTTEXT.vocab.vectors)
+			if not args.fasttext_tune:
+				self.ss_emb.weight.requires_grad = False
+		if args.word2vec:
+			word2vec = gsm.KeyedVectors.load_word2vec_format('data/GoogleNews-vectors-negative300.bin', binary=True)
+			e2v = gsm.KeyedVectors.load_word2vec_format('data/emoji2vec.bin', binary=True)
+			for i in range(args.word_vocab_size):
+				word = data.TEXT.vocab.itos[i]
+				if word in emoji.UNICODE_EMOJI and word in e2v.vocab:
+					self.ss_emb.weight.data[i] = torch.tensor(e2v[word])
+				elif word in word2vec.vocab:
+					self.ss_emb.weight.data[i] = torch.tensor(word2vec[word])
+				else:
+					nn.init.uniform_(self.ss_emb.weight.data[i], -0.05, 0.05)
+			if not args.word2vec_tune:
 				self.ss_emb.weight.requires_grad = False
 
 		if args.pos_emb:
@@ -101,7 +120,7 @@ class NN4EMO_FUSION(nn.Module):
 		self.device = args.device
 
 		# GloVe embedding
-		self.glove_emb = nn.Embedding(args.word_vocab_size, args.word_dim)
+		self.glove_emb = nn.Embedding(args.word_vocab_size, args.word_dim - 100)
 		# initialize word embedding with GloVe
 		self.glove_emb.weight.data.copy_(data.TEXT.vocab.vectors)
 		# fine-tune the word embedding
@@ -115,6 +134,23 @@ class NN4EMO_FUSION(nn.Module):
 		if args.ss_emb:
 			self.ss_emb.weight.data.copy_(ss_vectors)
 			if not args.ss_emb_tune:
+				self.ss_emb.weight.requires_grad = False
+		if args.fasttext:
+			self.ss_emb.weight.data.copy_(data.FASTTEXT.vocab.vectors)
+			if not args.fasttext_tune:
+				self.ss_emb.weight.requires_grad = False
+		if args.word2vec:
+			word2vec = gsm.KeyedVectors.load_word2vec_format('data/GoogleNews-vectors-negative300.bin', binary=True)
+			e2v = gsm.KeyedVectors.load_word2vec_format('data/emoji2vec.bin', binary=True)
+			for i in range(args.word_vocab_size):
+				word = data.TEXT.vocab.itos[i]
+				if word in emoji.UNICODE_EMOJI and word in e2v.vocab:
+					self.ss_emb.weight.data[i] = torch.tensor(e2v[word])
+				elif word in word2vec.vocab:
+					self.ss_emb.weight.data[i] = torch.tensor(word2vec[word])
+				else:
+					nn.init.uniform_(self.ss_emb.weight.data[i], -0.05, 0.05)
+			if not args.word2vec_tune:
 				self.ss_emb.weight.requires_grad = False
 
 		self.sentence_encoder_c = SentenceEncoder(args, data)
@@ -172,6 +208,7 @@ class NN4EMO_ENSEMBLE(nn.Module):
 	def __init__(self, args, data, ss_vectors=None):
 		super(NN4EMO_ENSEMBLE, self).__init__()
 		self.nn4emo = NN4EMO(args, data, ss_vectors)
+		args.ss_emb_tune = True
 		self.nn4emo_fusion = NN4EMO_FUSION(args, data, ss_vectors)
 
 	def forward(self, batch):
