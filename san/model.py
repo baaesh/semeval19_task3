@@ -160,8 +160,22 @@ class NN4EMO_FUSION(nn.Module):
 
 		outputs = self.fc1(s)
 		outputs = self.relu(outputs)
-		outputs = self.fc2(torch.cat([s, outputs], dim=-1))
-		outputs = self.relu(outputs)
+		#outputs = self.fc2(torch.cat([s, outputs], dim=-1))
+		#outputs = self.relu(outputs)
 		outputs = self.fc_out(outputs)
 
 		return outputs
+
+
+class NN4EMO_ENSEMBLE(nn.Module):
+
+	def __init__(self, args, data, ss_vectors=None):
+		super(NN4EMO_ENSEMBLE, self).__init__()
+		self.nn4emo = NN4EMO(args, data, ss_vectors)
+		self.nn4emo_fusion = NN4EMO_FUSION(args, data, ss_vectors)
+
+	def forward(self, batch):
+		out1 = self.nn4emo(batch)
+		out2 = self.nn4emo_fusion(batch)
+
+		return (out1 + out2) / 2

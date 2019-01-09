@@ -13,7 +13,7 @@ from torchtext import data
 
 from config import set_args
 from data import EMO, EMO_test
-from model import NN4EMO, NN4EMO_FUSION
+from model import NN4EMO, NN4EMO_FUSION, NN4EMO_ENSEMBLE
 from test import test
 from loss import FocalLoss, MFELoss, AdaptiveMFELoss
 
@@ -27,6 +27,8 @@ def train(args, data):
     device = torch.device(args.device)
     if args.fusion:
         model = NN4EMO_FUSION(args, data, ss_vectors).to(device)
+    elif args.ensemble:
+        model = NN4EMO_ENSEMBLE(args, data, ss_vectors).to(device)
     else:
         model = NN4EMO(args, data, ss_vectors).to(device)
 
@@ -47,8 +49,8 @@ def train(args, data):
 
     if args.mfe_loss:
         others_idx = data.LABEL.vocab.stoi['others']
-        #mfe_loss = MFELoss(others_idx)
-        mfe_loss = AdaptiveMFELoss(data)
+        mfe_loss = MFELoss(args, others_idx)
+        #mfe_loss = AdaptiveMFELoss(args, data)
 
     writer = SummaryWriter(log_dir='runs/' + args.model_time)
 
@@ -116,7 +118,7 @@ def predict(model, data):
     preds = []
     softmax = nn.Softmax(dim=1)
     for batch in iter(iterator):
-        pred = model(batch.text, batch.raw)
+        pred = model(batch)
         pred = softmax(pred)
         preds.append(pred.detach().cpu().numpy())
     preds = np.concatenate(preds)

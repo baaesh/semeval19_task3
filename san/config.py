@@ -28,6 +28,8 @@ def model_config(parser):
     parser.add_argument('--fusion', default=False, action='store_true')
     parser.add_argument('--no_share_encoder', dest='share_encoder', action='store_false')
 
+    parser.add_argument('--ensemble', default=False, action='store_true')
+
     return parser
 
 
@@ -57,6 +59,7 @@ def train_config(parser):
     parser.add_argument('--fl_gamma', type=float, default=0.0)
     parser.add_argument('--fl_alpha', type=float, default=None)
     parser.add_argument('--mfe_loss', default=False, action='store_true')
+    parser.add_argument('--mfe_alpha', type=float, default=0.75)
 
     return parser
 
