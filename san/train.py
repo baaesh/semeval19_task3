@@ -130,7 +130,13 @@ def submission(args, model_name):
     data = EMO_test(args)
 
     device = torch.device(args.device)
-    model = NN4EMO_FUSION(args, data).to(device)
+    if args.fusion:
+        model = NN4EMO_FUSION(args, data).to(device)
+    elif args.ensemble:
+        model = NN4EMO_ENSEMBLE(args, data).to(device)
+    else:
+        model = NN4EMO(args, data).to(device)
+
     model.load_state_dict(torch.load('./saved_models/' + model_name))
 
     preds = predict(model, data)
