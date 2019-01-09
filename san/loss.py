@@ -40,8 +40,9 @@ class FocalLoss(nn.Module):
 
 class MFELoss(nn.Module):
 
-    def __init__(self, others_idx):
+    def __init__(self, args, others_idx):
         super(MFELoss, self).__init__()
+        self.alpha = args.alpha
         self.others_idx = others_idx
         self.softmax = nn.Softmax(dim=1)
 
@@ -67,15 +68,15 @@ class MFELoss(nn.Module):
         fpe = fpe / fpe_num
         fne = fne / fne_num
 
-        loss = 0.0 * fpe + 1.0 * fne
-        #print(loss)
+        loss = 0.0 * fpe + self.alpha * fne
         return loss
 
 
 class AdaptiveMFELoss(nn.Module):
 
-    def __init__(self, data):
+    def __init__(self, args, data):
         super(AdaptiveMFELoss, self).__init__()
+        self.alpha = args.mfe_alpha
         self.others_idx = data.LABEL.vocab.stoi['others']
         self.happy_idx = data.LABEL.vocab.stoi['happy']
         self.sad_idx = data.LABEL.vocab.stoi['sad']
@@ -87,7 +88,6 @@ class AdaptiveMFELoss(nn.Module):
         batch_size, _ = outputs.size()
 
         preds = self.softmax(outputs)
-        #preds = self.sigmoid(outputs)
 
         fpe = 0
         fne = 0
@@ -116,5 +116,5 @@ class AdaptiveMFELoss(nn.Module):
         fpe = fpe / fpe_num
         fne = fne / fne_num
 
-        loss = 0.25 * fpe + 0.5 * fne
+        loss = (self.alpha / 3.0) * fpe + self.alpha * fne
         return loss
