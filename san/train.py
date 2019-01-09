@@ -180,7 +180,7 @@ def build_sswe_vectors():
             stoi[line] = idx
             idx += 1
 
-    print('Vocab Size: ' + str(len(TEXT.vocab)))
+
     vectors = []
     for i in range(len(TEXT.vocab)):
         try:
@@ -203,6 +203,8 @@ def main():
     setattr(args, 'word_vocab_size', len(data.TEXT.vocab))
     setattr(args, 'model_time', strftime('%H:%M:%S', gmtime()))
     setattr(args, 'class_size', len(data.LABEL.vocab))
+
+    print('Vocab Size: ' + str(len(data.TEXT.vocab)))
 
     build_sswe_vectors()
 

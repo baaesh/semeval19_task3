@@ -51,11 +51,11 @@ class NN4EMO(nn.Module):
 				self.ss_emb.weight.requires_grad = False
 		if args.word2vec:
 			word2vec = gsm.KeyedVectors.load_word2vec_format('data/GoogleNews-vectors-negative300.bin', binary=True)
-			e2v = gsm.KeyedVectors.load_word2vec_format('data/emoji2vec.bin', binary=True)
+			emoji2vec = gsm.KeyedVectors.load_word2vec_format('data/emoji2vec.bin', binary=True)
 			for i in range(args.word_vocab_size):
 				word = data.TEXT.vocab.itos[i]
-				if word in emoji.UNICODE_EMOJI and word in e2v.vocab:
-					self.ss_emb.weight.data[i] = torch.tensor(e2v[word])
+				if word in emoji.UNICODE_EMOJI and word in emoji2vec.vocab:
+					self.ss_emb.weight.data[i] = torch.tensor(emoji2vec[word])
 				elif word in word2vec.vocab:
 					self.ss_emb.weight.data[i] = torch.tensor(word2vec[word])
 				else:
@@ -141,11 +141,11 @@ class NN4EMO_FUSION(nn.Module):
 				self.ss_emb.weight.requires_grad = False
 		if args.word2vec:
 			word2vec = gsm.KeyedVectors.load_word2vec_format('data/GoogleNews-vectors-negative300.bin', binary=True)
-			e2v = gsm.KeyedVectors.load_word2vec_format('data/emoji2vec.bin', binary=True)
+			emoji2vec = gsm.KeyedVectors.load_word2vec_format('data/emoji2vec.bin', binary=True)
 			for i in range(args.word_vocab_size):
 				word = data.TEXT.vocab.itos[i]
-				if word in emoji.UNICODE_EMOJI and word in e2v.vocab:
-					self.ss_emb.weight.data[i] = torch.tensor(e2v[word])
+				if word in emoji.UNICODE_EMOJI and word in emoji2vec.vocab:
+					self.ss_emb.weight.data[i] = torch.tensor(emoji2vec[word])
 				elif word in word2vec.vocab:
 					self.ss_emb.weight.data[i] = torch.tensor(word2vec[word])
 				else:

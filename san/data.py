@@ -12,7 +12,7 @@ class EMO():
         tokenizer = TweetTokenizer()
         self.RAW = data.RawField()
         self.TEXT = data.Field(batch_first=True, include_lengths=True,
-                               lower=True, tokenize=tokenizer.tokenize)
+                               lower=False, tokenize=tokenizer.tokenize)
         self.LABEL = data.Field(sequential=False, unk_token=None)
 
         self.train, self.dev = datasets.EMO.splits(self.RAW, self.TEXT, self.LABEL,
@@ -22,7 +22,7 @@ class EMO():
 
         if args.fasttext:
             self.FASTTEXT = data.Field(batch_first=True, include_lengths=True,
-                                       lower=True, tokenize=tokenizer.tokenize)
+                                       lower=False, tokenize=tokenizer.tokenize)
             self.FASTTEXT.vocab = copy.deepcopy(self.TEXT.vocab)
             self.FASTTEXT.vocab.set_vectors(self.FASTTEXT.vocab.stoi,
                                             vectors=FastText(language='en'), dim=300)
