@@ -33,6 +33,8 @@ def model_config(parser):
     parser.add_argument('--lstm_num_layers', type=int, default=1)
     parser.add_argument('--lstm_hidden_dim', type=int, default=150)
 
+    parser.add_argument('--simple_encoder', default=False, action='store_true')
+
     parser.add_argument('--fusion', default=False, action='store_true')
     parser.add_argument('--no_share_encoder', dest='share_encoder', action='store_false')
 

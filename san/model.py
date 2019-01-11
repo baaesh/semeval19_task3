@@ -74,10 +74,15 @@ class NN4EMO(nn.Module):
         if args.pos_emb:
             self.pos_emb = nn.Parameter(torch.rand(512, args.word_dim))
 
-        self.sentence_encoder = SentenceEncoder(args, data)
+        if args.simple_encoder:
+            self.sentence_encoder = SimpleEncoder(args, data)
+            self.fc_dim = 2 * args.d_e
+        else:
+            self.sentence_encoder = SentenceEncoder(args, data)
+            self.fc_dim = 2 * args.d_e * 2
 
-        self.fc1 = nn.Linear(2 * args.d_e * 2, args.d_e)
-        self.fc2 = nn.Linear(2 * args.d_e * 2 + args.d_e, args.d_e)
+        self.fc1 = nn.Linear(self.fc_dim, args.d_e)
+        self.fc2 = nn.Linear(self.fc_dim + args.d_e, args.d_e)
         self.fc_out = nn.Linear(args.d_e, args.class_size)
 
         self.layer_norm = nn.LayerNorm(args.d_e)
@@ -168,14 +173,23 @@ class NN4EMO_FUSION(nn.Module):
             if not args.word2vec_tune:
                 self.ss_emb.weight.requires_grad = False
 
-        self.sentence_encoder_c = SentenceEncoder(args, data)
+        if args.simple_encoder:
+            self.sentence_encoder_c = SimpleEncoder(args, data)
+            self.fc_dim = 4 * 2 * args.d_e
+        else:
+            self.sentence_encoder_c = SentenceEncoder(args, data)
+            self.fc_dim = 4 * 2 * args.d_e * 2
+
         if args.share_encoder:
             self.sentence_encoder_s = self.sentence_encoder_c
         else:
-            self.sentence_encoder_s = SentenceEncoder(args, data)
+            if args.simple_encoder:
+                self.sentence_encoder_s = SimpleEncoder(args, data)
+            else:
+                self.sentence_encoder_s = SentenceEncoder(args, data)
 
-        self.fc1 = nn.Linear(4 * 2 * args.d_e * 2, args.d_e)
-        self.fc2 = nn.Linear(4 * 2 * args.d_e * 2 + args.d_e, args.d_e)
+        self.fc1 = nn.Linear(self.fc_dim, args.d_e)
+        self.fc2 = nn.Linear(self.fc_dim + args.d_e, args.d_e)
         self.fc_out = nn.Linear(args.d_e, args.class_size)
 
         self.layer_norm = nn.LayerNorm(args.d_e)
