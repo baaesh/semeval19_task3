@@ -1,5 +1,5 @@
 import numpy as np
-from torch import nn
+import torch
 from keras.utils import to_categorical
 
 def test(model, data, criterion, args):
@@ -11,6 +11,12 @@ def test(model, data, criterion, args):
     preds = []
     labels = []
     for batch in iter(iterator):
+        if args.char_emb:
+            char_c = torch.LongTensor(data.characterize(batch.context[0])).to(args.device)
+            char_s = torch.LongTensor(data.characterize(batch.sent[0])).to(args.device)
+            setattr(batch, 'char_c', char_c)
+            setattr(batch, 'char_s', char_s)
+
         pred = model(batch)
 
         batch_loss = criterion(pred, batch.label)

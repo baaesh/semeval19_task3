@@ -2,6 +2,7 @@ import math
 
 import torch
 import torch.nn as nn
+import torch.nn.functional as F
 from torch.autograd import Variable
 import torch.nn.init as init
 from torch.nn.utils.rnn import pad_packed_sequence as unpack
@@ -290,11 +291,12 @@ class ELMo(nn.Module):
 
 class LSTMEncoder(nn.Module):
 
-    def __init__(self, args, input_dim=None):
+    def __init__(self, args, input_dim=None, last_hidden=False):
         super(LSTMEncoder, self).__init__()
 
         self.args = args
         self.emb_dim = input_dim if input_dim is not None else args.word_dim
+        self.last_hidden=last_hidden
 
         for i in range(args.lstm_num_layers):
             if i == 0:
@@ -329,11 +331,44 @@ class LSTMEncoder(nn.Module):
             lstm_out = unpack(lstm_out, batch_first=True)[0]
 
         _, _indices = torch.sort(indices, 0)
-        out = lstm_out[_indices]
+
+        if self.last_hidden:
+            out = hid[_indices]
+        else:
+            out = lstm_out[_indices]
 
         return out
 
- 
+
+class CharCNN(nn.Module):
+
+    def __init__(self, args):
+        super(CharCNN, self).__init__()
+
+        self.args = args
+        self.FILTER_SIZES = args.FILTER_SIZES
+
+        for filter_size in args.FILTER_SIZES:
+            conv = nn.Conv1d(1, args.num_feature_maps, args.char_dim * filter_size, stride=args.char_dim)
+            setattr(self, 'conv_' + str(filter_size), conv)
+
+
+    def forward(self, x):
+        batch_seq_len, max_word_len, char_dim = x.size()
+
+        # (batch * seq_len, 1, max_word_len * char_dim)
+        x = x.view(batch_seq_len, 1, -1)
+
+        conv_result = [
+            F.max_pool1d(F.relu(getattr(self, 'conv_' + str(filter_size))(x)), max_word_len - filter_size + 1).view(-1,
+                                                                                                                    self.args.num_feature_maps)
+            for filter_size in self.FILTER_SIZES]
+
+        out = torch.cat(conv_result, 1)
+
+        return out
+
+
 class SentenceEncoder(nn.Module):
 
     def __init__(self, args, data):
@@ -344,10 +379,14 @@ class SentenceEncoder(nn.Module):
         #self.glove_block = LayerBlock(args, direction=None)
         #self.ss_block = LayerBlock(args, direction=None)
 
-        self.glove_lstm = LSTMEncoder(args, input_dim=args.word_dim * 2 - 100)
-        self.ss_lstm = LSTMEncoder(args)
+        self.glove_lstm = LSTMEncoder(args, input_dim=args.word_dim * 2)
+        self.ss_lstm = LSTMEncoder(args, input_dim=args.word_dim * 2)
 
         self.elmo = ELMo(args)
+
+        # character embedding
+        self.char_emb = nn.Embedding(args.char_vocab_size, args.char_dim, padding_idx=0)
+        self.charCNN = CharCNN(args)
 
         if args.seg_emb:
             self.seg_emb_g = nn.Embedding(3, args.word_dim * 2)
@@ -384,11 +423,28 @@ class SentenceEncoder(nn.Module):
         return seg_idx_batch
 
 
-    def forward(self, inputs, inputs_ss, batch_raw, rep_mask, lengths, seq):
+    def forward(self, inputs, inputs_ss, inputs_char, batch_raw, rep_mask, lengths, seq):
         batch, seq_len, d_e = inputs.size()
 
         elmo_emb_w, elmo_emb = self.elmo(batch_raw)
         inputs = torch.cat([inputs, elmo_emb_w], dim=-1)
+
+        # character embedding
+        if self.args.char_emb:
+            # (batch, seq_len, max_word_len)
+            char = inputs_char
+            batch_size, seq_len, _ = char.size()
+
+            # (batch * seq_len, max_word_len)
+            char = char.view(-1, self.args.max_word_len)
+
+            # (batch * seq_len, max_word_len, char_dim)
+            char = self.char_emb(char)
+
+            # (batch, seq_len, len(FILTER_SIZES) * num_feature_maps)
+            char = self.charCNN(char).view(batch_size, seq_len, -1)
+
+            inputs_ss = torch.cat([inputs_ss, char], dim=-1)
 
         if self.args.seg_emb:
             seg_idx = self.seg_seq(seq)

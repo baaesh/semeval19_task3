@@ -18,6 +18,10 @@ def model_config(parser):
     parser.add_argument('--no_elmo_feed_forward', dest='elmo_feed_forward', action='store_false')
     parser.add_argument('--elmo_dim', type=int, default=1024)
 
+    parser.add_argument('--char_emb', default=False, action='store_true')
+    parser.add_argument('--char-dim', default=15, type=int)
+    parser.add_argument('--num-feature-maps', default=100, type=int)
+
     parser.add_argument('--ss_emb', default=False, action='store_true')
     parser.add_argument('--ss_emb_tune', default=False, action='store_true')
     parser.add_argument('--fasttext', default=False, action='store_true')

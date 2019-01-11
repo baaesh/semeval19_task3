@@ -67,6 +67,12 @@ def train(args, data):
         print('epoch: ', epoch + 1)
         scheduler.step()
         for i, batch in enumerate(iterator):
+            if args.char_emb:
+                char_c = torch.LongTensor(data.characterize(batch.context[0])).to(device)
+                char_s = torch.LongTensor(data.characterize(batch.sent[0])).to(device)
+                setattr(batch, 'char_c', char_c)
+                setattr(batch, 'char_s', char_s)
+
             pred = model(batch)
 
             optimizer.zero_grad()
@@ -203,6 +209,10 @@ def main():
     setattr(args, 'word_vocab_size', len(data.TEXT.vocab))
     setattr(args, 'model_time', strftime('%H:%M:%S', gmtime()))
     setattr(args, 'class_size', len(data.LABEL.vocab))
+    setattr(args, 'max_word_len', data.max_word_len)
+    setattr(args, 'char_vocab_size', len(data.char_vocab))
+    setattr(args, 'FILTER_SIZES', [1, 3, 5])
+    print(args.char_vocab_size)
 
     print('Vocab Size: ' + str(len(data.TEXT.vocab)))
 
