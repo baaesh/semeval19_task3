@@ -58,7 +58,7 @@ class MFELoss(nn.Module):
         fne_num = 0
         for i in range(batch_size):
             if target[i] == self.others_idx:
-                fne += 1/2 * ((1-preds[i][self.others_idx])**2
+                fne += 1/2 * ((preds[i].sum()-preds[i][self.others_idx])**2
                              + (preds[i][self.others_idx]-1)**2)
                 fne_num += 1
             else:
