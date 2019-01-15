@@ -372,6 +372,108 @@ class CharCNN(nn.Module):
         return out
 
 
+class BiAttention(nn.Module):
+
+    def __init__(self, args):
+        super(BiAttention, self).__init__()
+        self.args = args
+
+        self.softmax = nn.Softmax(dim=1)
+
+    def forward(self, x, y):
+        # x: (batch size) x (sequence length x) x (dim)
+        # y: (batch size) x (sequence length y) x (dim)
+        # xy: (batch size) x (sequence length x) x (sequence length y)
+        xy = torch.bmm(x, y.transpose(1, 2))
+
+        # a_x: (batch size) x (sequence length x) x (sequence length y)
+        # a_y: (batch size) x (sequence length y) x (sequence length x)
+        a_x = self.softmax(xy)
+        a_y = self.softmax(xy.transpose(1, 2))
+
+        # c_x: (batch size) x (sequence length y) x (dim)
+        # c_y: (batch_size) x (sequence length x) x (dim)
+        c_x = torch.bmm(a_x.transpose(1, 2), x)
+        c_y = torch.bmm(a_y.transpose(1, 2), y)
+
+        # x_out: (batch size) x (sequence length x) x (3 * dim)
+        # y_out: (batch size) x (sequence length y) x (3 * dim)
+        x_out = torch.cat([x, x - c_y, x * c_y], dim=-1)
+        y_out = torch.cat([y, y - c_x, y * c_x], dim=-1)
+
+        return x_out, y_out
+
+
+class BiAttentionEncoder(nn.Module):
+
+    def __init__(self, args, data):
+        super(BiAttentionEncoder, self).__init__()
+        self.args = args
+
+        self.lstm1 = LSTMEncoder(args, input_dim = args.word_dim * 2)
+        self.lstm2 = LSTMEncoder(args, input_dim = args.word_dim * 2)
+
+        self.c_integrate = LSTMEncoder(args, input_dim = args.word_dim * 2 * 3, last_hidden=True)
+        self.s_integrate = LSTMEncoder(args, input_dim=args.word_dim * 2 * 3, last_hidden=True)
+
+        self.elmo = ELMo(args)
+
+        # character embedding
+        self.char_emb = nn.Embedding(args.char_vocab_size, args.char_dim, padding_idx=0)
+        self.charCNN = CharCNN(args)
+
+        self.biattention = BiAttention(args)
+
+        self.s2t_SA = Source2Token(d_h=2 * args.d_e, dropout=args.dropout)
+
+    def forward(self, c_in1, c_in2, s_in1, s_in2,
+                c_in_char, s_in_char, c_in_raw, s_in_raw,
+                c_rep_mask, s_rep_mask, c_lengths, s_lengths):
+
+        c_elmo = self.elmo(c_in_raw)[0]
+        s_elmo = self.elmo(s_in_raw)[0]
+        c_in1 = torch.cat([c_in1, c_elmo], dim=-1)
+        s_in1 = torch.cat([s_in1, s_elmo], dim=-1)
+
+        # character embedding
+        if self.args.char_emb:
+            # (batch, seq_len, max_word_len)
+            c_char = c_in_char
+            s_char = s_in_char
+            batch_size, c_seq_len, _ = c_char.size()
+            batch_size, s_seq_len, _ = s_char.size()
+
+            # (batch * seq_len, max_word_len)
+            c_char = c_char.view(-1, self.args.max_word_len)
+            s_char = s_char.view(-1, self.args.max_word_len)
+
+            # (batch * seq_len, max_word_len, char_dim)
+            c_char = self.char_emb(c_char)
+            s_char = self.char_emb(s_char)
+
+            # (batch, seq_len, len(FILTER_SIZES) * num_feature_maps)
+            c_char = self.charCNN(c_char).view(batch_size, c_seq_len, -1)
+            s_char = self.charCNN(s_char).view(batch_size, s_seq_len, -1)
+
+            c_in2 = torch.cat([c_in2, c_char], dim=-1)
+            s_in2 = torch.cat([s_in2, s_char], dim=-1)
+
+        c_u_1 = self.lstm1(c_in1, c_lengths)
+        c_u_2 = self.lstm2(c_in2, c_lengths)
+        s_u_1 = self.lstm1(s_in1, s_lengths)
+        s_u_2 = self.lstm2(s_in2, s_lengths)
+
+        c_u = torch.cat([c_u_1, c_u_2], dim=-1)
+        s_u = torch.cat([s_u_1, s_u_2], dim=-1)
+
+        c_u, s_u = self.biattention(c_u, s_u)
+
+        c_out = self.c_integrate(c_u, c_lengths)
+        s_out = self.s_integrate(s_u, s_lengths)
+
+        return c_out, s_out
+
+
 class SentenceEncoder(nn.Module):
 
     def __init__(self, args, data):

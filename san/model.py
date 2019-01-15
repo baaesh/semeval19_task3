@@ -177,20 +177,24 @@ class NN4EMO_FUSION(nn.Module):
             if not args.word2vec_tune:
                 self.ss_emb.weight.requires_grad = False
 
-        if args.simple_encoder:
-            self.sentence_encoder_c = SimpleEncoder(args, data)
-            self.fc_dim = 4 * 2 * args.d_e
-        else:
-            self.sentence_encoder_c = SentenceEncoder(args, data)
-            self.fc_dim = 4 * 2 * args.d_e * 2
-
-        if args.share_encoder:
-            self.sentence_encoder_s = self.sentence_encoder_c
+        if args.biattention:
+            self.biattention_encoder = BiAttentionEncoder(args, data)
+            self.fc_dim = 4 * args.d_e
         else:
             if args.simple_encoder:
-                self.sentence_encoder_s = SimpleEncoder(args, data)
+                self.sentence_encoder_c = SimpleEncoder(args, data)
+                self.fc_dim = 4 * 2 * args.d_e
             else:
-                self.sentence_encoder_s = SentenceEncoder(args, data)
+                self.sentence_encoder_c = SentenceEncoder(args, data)
+                self.fc_dim = 4 * 2 * args.d_e * 2
+
+            if args.share_encoder:
+                self.sentence_encoder_s = self.sentence_encoder_c
+            else:
+                if args.simple_encoder:
+                    self.sentence_encoder_s = SimpleEncoder(args, data)
+                else:
+                    self.sentence_encoder_s = SentenceEncoder(args, data)
 
         self.fc1 = nn.Linear(self.fc_dim, args.d_e)
         self.fc2 = nn.Linear(self.fc_dim + args.d_e, args.d_e)
@@ -199,6 +203,7 @@ class NN4EMO_FUSION(nn.Module):
         self.layer_norm = nn.LayerNorm(args.d_e)
         self.dropout = nn.Dropout(args.dropout)
         self.relu = nn.ReLU()
+
 
     def forward(self, batch):
         batch_raw_c = batch.raw_c
@@ -225,11 +230,18 @@ class NN4EMO_FUSION(nn.Module):
         rep_mask_c = get_rep_mask(lens_c, self.device)
         rep_mask_s = get_rep_mask(lens_s, self.device)
 
-        # (batch, seq_len, 4 * d_e)
-        s_c = self.sentence_encoder_c(x_c_g, x_c_s, batch_char_c, batch_raw_c,
-                                      rep_mask_c, lens_c, seq_c)
-        s_s = self.sentence_encoder_s(x_s_g, x_s_s, batch_char_s, batch_raw_s,
-                                      rep_mask_s, lens_s, seq_s)
+        if self.args.biattention:
+            s_c, s_s = self.biattention_encoder(x_c_g, x_c_s, x_s_g, x_s_s,
+                                                batch_char_c, batch_char_s,
+                                                batch_raw_c, batch_raw_s,
+                                                rep_mask_c, rep_mask_s,
+                                                lens_c, lens_s)
+        else:
+            # (batch, seq_len, 4 * d_e)
+            s_c = self.sentence_encoder_c(x_c_g, x_c_s, batch_char_c, batch_raw_c,
+                                          rep_mask_c, lens_c, seq_c)
+            s_s = self.sentence_encoder_s(x_s_g, x_s_s, batch_char_s, batch_raw_s,
+                                          rep_mask_s, lens_s, seq_s)
 
         # fusion
         s = torch.cat([s_c, s_s, s_c - s_s, s_c * s_s], dim=-1)
