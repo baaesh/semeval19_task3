@@ -50,7 +50,6 @@ def train(args, data):
     if args.mfe_loss:
         others_idx = data.LABEL.vocab.stoi['others']
         mfe_loss = MFELoss(args, others_idx)
-        #mfe_loss = AdaptiveMFELoss(args, data)
 
     writer = SummaryWriter(log_dir='runs/' + args.model_time)
 
@@ -122,12 +121,21 @@ def train(args, data):
     return best_model, max_dev_f1
 
 
-def predict(model, data):
+def predict(model, args, data):
     iterator = data.test_iter
     model.eval()
     preds = []
     softmax = nn.Softmax(dim=1)
     for batch in iter(iterator):
+        if args.char_emb:
+            if args.fusion:
+                char_c = torch.LongTensor(data.characterize(batch.context[0])).to(device)
+                char_s = torch.LongTensor(data.characterize(batch.sent[0])).to(device)
+                setattr(batch, 'char_c', char_c)
+                setattr(batch, 'char_s', char_s)
+            else:
+                char = torch.LongTensor(data.characterize(batch.text[0])).to(device)
+                setattr(batch, 'char', char)
         pred = model(batch)
         pred = softmax(pred)
         preds.append(pred.detach().cpu().numpy())
@@ -149,7 +157,7 @@ def submission(args, model_name):
 
     model.load_state_dict(torch.load('./saved_models/' + model_name))
 
-    preds = predict(model, data)
+    preds = predict(model, args, data)
 
     maxs = preds.max(axis=1)
     print(maxs)
