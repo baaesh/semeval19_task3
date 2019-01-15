@@ -95,6 +95,8 @@ class EMO(data.Dataset):
             conversations : List of 3 turn conversations, processed and each turn separated by the <eos> tag
             labels : [Only available in "train" mode] List of labels
         """
+        binary = False
+
         indices = []
         raws = []
         raws_c = []
@@ -127,6 +129,9 @@ class EMO(data.Dataset):
                 if mode == "train":
                     # Train data contains id, 3 turns and label
                     label = line[4]
+                    # binary classification
+                    if binary and label != 'others':
+                        label = 'emotional'
                     labels.append(label)
 
                 conv = ' <eos> '.join(line[1:4])
