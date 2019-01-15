@@ -96,3 +96,26 @@ class EMO_test():
                           shuffle=False,
                           sort=False,
                           repeat=False)
+
+        self.max_word_len = max([len(w) for w in self.TEXT.vocab.itos])
+        # for <pad>
+        self.char_vocab = {'': 0}
+        # for <unk> and <pad>
+        self.characterized_words = [[0] * self.max_word_len, [0] * self.max_word_len]
+
+        if args.char_emb:
+            self.build_char_vocab()
+
+
+    def build_char_vocab(self):
+        # for normal words
+        for word in self.TEXT.vocab.itos[2:]:
+            chars = []
+            for c in list(word):
+                if c not in self.char_vocab:
+                    self.char_vocab[c] = len(self.char_vocab)
+
+                chars.append(self.char_vocab[c])
+
+            chars.extend([0] * (self.max_word_len - len(word)))
+            self.characterized_words.append(chars)
