@@ -49,7 +49,7 @@ def train(args, data):
 
     if args.mfe_loss:
         others_idx = data.LABEL.vocab.stoi['others']
-        mfe_loss = MFELoss(args, others_idx)
+        mfe_loss = AMFELoss(args, others_idx)
 
     writer = SummaryWriter(log_dir='runs/' + args.model_time)
 
@@ -129,12 +129,12 @@ def predict(model, args, data):
     for batch in iter(iterator):
         if args.char_emb:
             if args.fusion:
-                char_c = torch.LongTensor(data.characterize(batch.context[0])).to(device)
-                char_s = torch.LongTensor(data.characterize(batch.sent[0])).to(device)
+                char_c = torch.LongTensor(data.characterize(batch.context[0])).to(args.device)
+                char_s = torch.LongTensor(data.characterize(batch.sent[0])).to(args.device)
                 setattr(batch, 'char_c', char_c)
                 setattr(batch, 'char_s', char_s)
             else:
-                char = torch.LongTensor(data.characterize(batch.text[0])).to(device)
+                char = torch.LongTensor(data.characterize(batch.text[0])).to(args.device)
                 setattr(batch, 'char', char)
         pred = model(batch)
         pred = softmax(pred)

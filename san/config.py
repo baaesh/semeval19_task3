@@ -10,7 +10,7 @@ def model_config(parser):
 
     parser.add_argument('--dist_mask', default=False, action='store_true')
     parser.add_argument('--alpha', default=1.5, type=float)
-    parser.add_argument('--no_seg_emb', dest='seg_emb', action='store_false')
+    parser.add_argument('--seg_emb', default=False, action='store_true')
     parser.add_argument('--seg_emb_share', default=False, action='store_true')
     parser.add_argument('--pos_emb', default=False, action='store_true')
 
@@ -37,6 +37,8 @@ def model_config(parser):
 
     parser.add_argument('--fusion', default=False, action='store_true')
     parser.add_argument('--no_share_encoder', dest='share_encoder', action='store_false')
+
+    parser.add_argument('--biattention', default=False, action='store_true')
 
     parser.add_argument('--ensemble', default=False, action='store_true')
 

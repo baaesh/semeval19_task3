@@ -119,3 +119,12 @@ class EMO_test():
 
             chars.extend([0] * (self.max_word_len - len(word)))
             self.characterized_words.append(chars)
+
+
+    def characterize(self, batch):
+        """
+    	:param batch: Pytorch Variable with shape (batch, seq_len)
+    	:return: Pytorch Variable with shape (batch, seq_len, max_word_len)
+    	"""
+        batch = batch.data.cpu().numpy().astype(int).tolist()
+        return [[self.characterized_words[w] for w in words] for words in batch]
