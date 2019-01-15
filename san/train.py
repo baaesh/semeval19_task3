@@ -15,7 +15,7 @@ from config import set_args
 from data import EMO, EMO_test
 from model import NN4EMO, NN4EMO_FUSION, NN4EMO_ENSEMBLE
 from test import test
-from loss import FocalLoss, MFELoss, AdaptiveMFELoss
+from loss import FocalLoss, MFELoss, MSFELoss, AMFELoss, AMSFELoss, ModifiedMFELoss
 
 
 def train(args, data):
@@ -68,10 +68,14 @@ def train(args, data):
         scheduler.step()
         for i, batch in enumerate(iterator):
             if args.char_emb:
-                char_c = torch.LongTensor(data.characterize(batch.context[0])).to(device)
-                char_s = torch.LongTensor(data.characterize(batch.sent[0])).to(device)
-                setattr(batch, 'char_c', char_c)
-                setattr(batch, 'char_s', char_s)
+                if args.fusion:
+                    char_c = torch.LongTensor(data.characterize(batch.context[0])).to(device)
+                    char_s = torch.LongTensor(data.characterize(batch.sent[0])).to(device)
+                    setattr(batch, 'char_c', char_c)
+                    setattr(batch, 'char_s', char_s)
+                else:
+                    char = torch.LongTensor(data.characterize(batch.text[0])).to(device)
+                    setattr(batch, 'char', char)
 
             pred = model(batch)
 

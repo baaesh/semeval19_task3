@@ -12,10 +12,14 @@ def test(model, data, criterion, args):
     labels = []
     for batch in iter(iterator):
         if args.char_emb:
-            char_c = torch.LongTensor(data.characterize(batch.context[0])).to(args.device)
-            char_s = torch.LongTensor(data.characterize(batch.sent[0])).to(args.device)
-            setattr(batch, 'char_c', char_c)
-            setattr(batch, 'char_s', char_s)
+            if args.fusion:
+                char_c = torch.LongTensor(data.characterize(batch.context[0])).to(args.device)
+                char_s = torch.LongTensor(data.characterize(batch.sent[0])).to(args.device)
+                setattr(batch, 'char_c', char_c)
+                setattr(batch, 'char_s', char_s)
+            else:
+                char = torch.LongTensor(data.characterize(batch.text[0])).to(args.device)
+                setattr(batch, 'char', char)
 
         pred = model(batch)
 

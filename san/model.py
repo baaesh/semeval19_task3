@@ -91,8 +91,11 @@ class NN4EMO(nn.Module):
 
     def forward(self, batch):
         batch_raw = batch.raw
-        batch = batch.text
-        seq, lens = batch
+        seq, lens = batch.text
+        if self.args.char_emb:
+            batch_char = batch.char
+        else:
+            batch_char = None
 
         # (batch, seq_len, word_dim)
         x_g = self.glove_emb(seq)
@@ -109,7 +112,8 @@ class NN4EMO(nn.Module):
         rep_mask = get_rep_mask(lens, self.device)
 
         # (batch, seq_len, 4 * d_e)
-        s = self.sentence_encoder(x_g, x_s, batch_raw, rep_mask, lens, seq)
+        s = self.sentence_encoder(x_g, x_s, batch_char, batch_raw,
+                                  rep_mask, lens, seq)
 
         outputs = self.fc1(s)
         outputs = self.relu(outputs)

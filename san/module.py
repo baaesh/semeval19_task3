@@ -333,7 +333,10 @@ class LSTMEncoder(nn.Module):
         _, _indices = torch.sort(indices, 0)
 
         if self.last_hidden:
-            out = hid[_indices]
+            hid = hid[0]
+            hid.transpose_(0, 1)
+            hid = hid[_indices]
+            out = hid.view(hid.size()[0], -1)
         else:
             out = lstm_out[_indices]
 
