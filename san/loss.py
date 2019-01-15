@@ -42,7 +42,6 @@ class MFELoss(nn.Module):
 
     def __init__(self, args, others_idx):
         super(MFELoss, self).__init__()
-        self.alpha = args.alpha
         self.others_idx = others_idx
         self.softmax = nn.Softmax(dim=1)
 
@@ -68,14 +67,114 @@ class MFELoss(nn.Module):
         fpe = fpe / fpe_num
         fne = fne / fne_num
 
-        loss = 0.0 * fpe + self.alpha * fne
+        loss = fpe + fne
         return loss
 
 
-class AdaptiveMFELoss(nn.Module):
+class MSFELoss(nn.Module):
+
+    def __init__(self, args, others_idx):
+        super(MSFELoss, self).__init__()
+        self.others_idx = others_idx
+        self.softmax = nn.Softmax(dim=1)
+
+    def forward(self, preds, target):
+        batch_size, _ = preds.size()
+
+        preds = self.softmax(preds)
+
+        fpe = 0
+        fne = 0
+        fpe_num = 0
+        fne_num = 0
+        for i in range(batch_size):
+            if target[i] == self.others_idx:
+                fne += 1 / 2 * ((preds[i].sum() - preds[i][self.others_idx]) ** 2
+                                + (preds[i][self.others_idx] - 1) ** 2)
+                fne_num += 1
+            else:
+                fpe += 1 / 2 * ((-preds[i][self.others_idx]) ** 2
+                                + (preds[i][self.others_idx]) ** 2)
+                fpe_num += 1
+        fpe = fpe / fpe_num
+        fne = fne / fne_num
+
+        loss = fpe**2 + fne**2
+        return loss
+
+
+class AMFELoss(nn.Module):
+
+    def __init__(self, args, others_idx):
+        super(AMFELoss, self).__init__()
+        self.alpha = args.mfe_alpha
+        self.others_idx = others_idx
+        self.softmax = nn.Softmax(dim=1)
+
+
+    def forward(self, preds, target):
+        batch_size, _ = preds.size()
+
+        preds = self.softmax(preds)
+
+        fpe = 0
+        fne = 0
+        fpe_num = 0
+        fne_num = 0
+        for i in range(batch_size):
+            if target[i] == self.others_idx:
+                fne += 1/2 * ((preds[i].sum()-preds[i][self.others_idx])**2
+                             + (preds[i][self.others_idx]-1)**2)
+                fne_num += 1
+            else:
+                fpe += 1/2 * ((-preds[i][self.others_idx])**2
+                             + (preds[i][self.others_idx])**2)
+                fpe_num += 1
+        fpe = fpe / fpe_num
+        fne = fne / fne_num
+
+        loss = (1-self.alpha) * fpe + self.alpha * fne
+        return loss
+
+
+class AMSFELoss(nn.Module):
+
+    def __init__(self, args, others_idx):
+        super(AMSFELoss, self).__init__()
+        self.alpha = args.mfe_alpha
+        self.others_idx = others_idx
+        self.softmax = nn.Softmax(dim=1)
+
+
+    def forward(self, preds, target):
+        batch_size, _ = preds.size()
+
+        preds = self.softmax(preds)
+
+        fpe = 0
+        fne = 0
+        fpe_num = 0
+        fne_num = 0
+        for i in range(batch_size):
+            if target[i] == self.others_idx:
+                fne += 1/2 * ((preds[i].sum()-preds[i][self.others_idx])**2
+                             + (preds[i][self.others_idx]-1)**2)
+                fne_num += 1
+            else:
+                fpe += 1/2 * ((-preds[i][self.others_idx])**2
+                             + (preds[i][self.others_idx])**2)
+                fpe_num += 1
+        fpe = fpe / fpe_num
+        fne = fne / fne_num
+
+        loss = (1-self.alpha)**2 * fpe**2 + self.alpha**2 * fne**2
+        return loss
+
+
+class ModifiedMFELoss(nn.Module):
 
     def __init__(self, args, data):
-        super(AdaptiveMFELoss, self).__init__()
+        super(ModifiedMFELoss, self).__init__()
         self.alpha = args.mfe_alpha
         self.others_idx = data.LABEL.vocab.stoi['others']
         self.happy_idx = data.LABEL.vocab.stoi['happy']
