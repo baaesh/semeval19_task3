@@ -65,6 +65,7 @@ def train_config(parser):
     parser.add_argument('--dropout', type=float, default=0.1)
     parser.add_argument('--batch_size', type=int, default=64)
     parser.add_argument('--learning_rate', type=float, default=0.001)
+    parser.add_argument('--norm_limit', type=float, default=3.0)
     parser.add_argument('--lr_gamma', type=float, default=1.0)
     parser.add_argument('--weight_decay', type=float, default=0)
     parser.add_argument('--max_epoch', type=int, default=10)

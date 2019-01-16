@@ -97,6 +97,7 @@ def train(args, data):
             loss += batch_loss.item()
 
             batch_loss.backward()
+            nn.utils.clip_grad_norm_(parameters, max_norm=args.norm_limit)
             optimizer.step()
 
             _, pred = pred.max(dim=1)
