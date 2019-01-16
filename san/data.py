@@ -1,16 +1,22 @@
+import os
 import copy
 import pickle
+
+import numpy as np
 from torchtext import data
 from torchtext.vocab import GloVe, FastText
 from nltk import word_tokenize
 from nltk.tokenize import TweetTokenizer
+from ekphrasis.classes.tokenizer import SocialTokenizer
 
 import datasets
+
 
 class EMO():
 
     def __init__(self, args):
-        tokenizer = TweetTokenizer()
+        #tokenizer = TweetTokenizer()
+        tokenizer = SocialTokenizer(lowercase=True)
         self.RAW = data.RawField()
         self.TEXT = data.Field(batch_first=True, include_lengths=True,
                                lower=True, tokenize=tokenizer.tokenize)
@@ -76,7 +82,8 @@ class EMO():
 class EMO_test():
 
     def __init__(self, args):
-        tokenizer = TweetTokenizer()
+        #tokenizer = TweetTokenizer()
+        tokenizer = SocialTokenizer(lowercase=True)
         self.RAW = data.RawField()
         self.TEXT = data.Field(batch_first=True, include_lengths=True,
                                lower=True, tokenize=tokenizer.tokenize)
@@ -128,3 +135,22 @@ class EMO_test():
     	"""
         batch = batch.data.cpu().numpy().astype(int).tolist()
         return [[self.characterized_words[w] for w in words] for words in batch]
+
+
+def build_datastories_vectors(data):
+    vector_path = 'data/datastories/datastories.twitter.300d.txt'
+
+    if os.path.exists(vector_path):
+        print('Indexing file datastories.twitter.300d.txt ...')
+        embeddings_dict = {}
+        with open(vector_path, "r", encoding="utf-8") as f:
+            for i, line in enumerate(f):
+                values = line.split()
+                word = values[0]
+                if word in data.TEXT.vocab.stoi:
+                    coefs = np.asarray(values[1:], dtype='float32')
+                    embeddings_dict[word] = coefs
+
+        print('Found %s word vectors.' % len(embeddings_dict))
+
+        return embeddings_dict
