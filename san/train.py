@@ -13,7 +13,7 @@ from torchtext import data
 
 from config import set_args
 from data import EMO, EMO_test
-from model import NN4EMO, NN4EMO_FUSION, NN4EMO_ENSEMBLE
+from model import NN4EMO, NN4EMO_FUSION, NN4EMO_ENSEMBLE, NN4EMO_SEPERATE
 from test import test
 from loss import FocalLoss, MFELoss, MSFELoss, AMFELoss, AMSFELoss, ModifiedMFELoss
 
@@ -29,6 +29,8 @@ def train(args, data):
         model = NN4EMO_FUSION(args, data, ss_vectors).to(device)
     elif args.ensemble:
         model = NN4EMO_ENSEMBLE(args, data, ss_vectors).to(device)
+    elif args.seperate:
+        model = NN4EMO_SEPERATE(args, data, ss_vectors).to(device)
     else:
         model = NN4EMO(args, data, ss_vectors).to(device)
 
@@ -72,6 +74,13 @@ def train(args, data):
                     char_s = torch.LongTensor(data.characterize(batch.sent[0])).to(device)
                     setattr(batch, 'char_c', char_c)
                     setattr(batch, 'char_s', char_s)
+                elif args.seperate:
+                    char_turn1 = torch.LongTensor(data.characterize(batch.turn1[0])).to(device)
+                    char_turn2 = torch.LongTensor(data.characterize(batch.turn2[0])).to(device)
+                    char_turn3 = torch.LongTensor(data.characterize(batch.turn3[0])).to(device)
+                    setattr(batch, 'char_turn1', char_turn1)
+                    setattr(batch, 'char_turn2', char_turn2)
+                    setattr(batch, 'char_turn3', char_turn3)
                 else:
                     char = torch.LongTensor(data.characterize(batch.text[0])).to(device)
                     setattr(batch, 'char', char)
@@ -133,6 +142,13 @@ def predict(model, args, data):
                 char_s = torch.LongTensor(data.characterize(batch.sent[0])).to(args.device)
                 setattr(batch, 'char_c', char_c)
                 setattr(batch, 'char_s', char_s)
+            elif args.seperate:
+                char_turn1 = torch.LongTensor(data.characterize(batch.turn1[0])).to(args.device)
+                char_turn2 = torch.LongTensor(data.characterize(batch.turn2[0])).to(args.device)
+                char_turn3 = torch.LongTensor(data.characterize(batch.turn3[0])).to(args.device)
+                setattr(batch, 'char_turn1', char_turn1)
+                setattr(batch, 'char_turn2', char_turn2)
+                setattr(batch, 'char_turn3', char_turn3)
             else:
                 char = torch.LongTensor(data.characterize(batch.text[0])).to(args.device)
                 setattr(batch, 'char', char)
@@ -152,6 +168,8 @@ def submission(args, model_name):
         model = NN4EMO_FUSION(args, data).to(device)
     elif args.ensemble:
         model = NN4EMO_ENSEMBLE(args, data).to(device)
+    elif args.seperate:
+        model = NN4EMO_SEPERATE(args, data).to(device)
     else:
         model = NN4EMO(args, data).to(device)
 
@@ -210,6 +228,24 @@ def build_sswe_vectors():
     vectors = torch.stack(vectors)
 
     torch.save(vectors, 'data/sswe/sswe.pt')
+
+
+def build_datastories_vectors(data):
+    vector_path = 'data/datastories/datastories.twitter.300d.txt'
+
+    if os.path.exists(vector_path):
+        print('Indexing file datastories.twitter.300d.txt ...')
+        embeddings_dict = {}
+        with open(vector_path, "r", encoding="utf-8") as f:
+            for i, line in enumerate(f):
+                values = line.split()
+                word = values[0]
+                if word in data.TEXT.vocab.stoi:
+                    coefs = np.asarray(values[1:], dtype='float32')
+                    embeddings_dict[word] = coefs
+
+        print('Found %s word vectors.' % len(embeddings_dict))
+
 
 
 def main():

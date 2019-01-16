@@ -5,6 +5,8 @@ import random
 
 from torchtext import data
 from nltk.tokenize import TweetTokenizer
+from ekphrasis.classes.tokenizer import SocialTokenizer
+
 
 class EMO(data.Dataset):
 
@@ -27,17 +29,29 @@ class EMO(data.Dataset):
             fields = [('raw', raw_field),
                       ('raw_c', raw_field),
                       ('raw_s', raw_field),
+                      ('raw_turn1', raw_field),
+                      ('raw_turn2', raw_field),
+                      ('raw_turn3', raw_field),
                       ('text', text_field),
                       ('context', text_field),
                       ('sent', text_field),
+                      ('turn1', text_field),
+                      ('turn2', text_field),
+                      ('turn3', text_field),
                       ('label', label_field)]
         else:
             fields = [('raw', raw_field),
                       ('raw_c', raw_field),
                       ('raw_s', raw_field),
+                      ('raw_turn1', raw_field),
+                      ('raw_turn2', raw_field),
+                      ('raw_turn3', raw_field),
                       ('text', text_field),
                       ('context', text_field),
-                      ('sent', text_field)]
+                      ('sent', text_field),
+                      ('turn1', text_field),
+                      ('turn2', text_field),
+                      ('turn3', text_field)]
 
         if examples is None:
             dataset = self.preprocessData(path, mode)
@@ -50,7 +64,13 @@ class EMO(data.Dataset):
                                            line[3],
                                            line[4],
                                            line[5],
-                                           line[6]],
+                                           line[6],
+                                           line[7],
+                                           line[8],
+                                           line[9],
+                                           line[10],
+                                           line[11],
+                                           line[12]],
                                           fields) for line in dataset]
             else:
                 examples += [
@@ -59,7 +79,13 @@ class EMO(data.Dataset):
                                            line[2],
                                            line[3],
                                            line[4],
-                                           line[5]],
+                                           line[5],
+                                           line[6],
+                                           line[7],
+                                           line[8],
+                                           line[9],
+                                           line[10],
+                                           line[11]],
                                           fields) for line in dataset]
         super(EMO, self).__init__(examples, fields, **kwargs)
 
@@ -101,11 +127,19 @@ class EMO(data.Dataset):
         raws = []
         raws_c = []
         raws_s = []
+        raws_turn1 = []
+        raws_turn2 = []
+        raws_turn3 = []
         conversations = []
         contexts = []
         sents = []
         labels = []
-        tokenizer = TweetTokenizer()
+        turn1s = []
+        turn2s = []
+        turn3s = []
+
+        #tokenizer = TweetTokenizer()
+        tokenizer = SocialTokenizer(lowercase=True)
         with io.open(dataFilePath, encoding="utf8") as finput:
             finput.readline()
             for line in finput:
@@ -134,23 +168,36 @@ class EMO(data.Dataset):
                         label = 'emotional'
                     labels.append(label)
 
-                conv = ' <eos> '.join(line[1:4])
+                #conv = ' <eos> '.join(line[1:4])
+                conv = line[1] + ' <eos1> ' + line[2] + ' <eos2> ' + line[3]
                 context = ' <eos> '.join(line[1:3])
                 sent = line[3]
+                turn1 = line[1]
+                turn2 = line[2]
+                turn3 = line[3]
 
                 # Remove any duplicate spaces
                 duplicateSpacePattern = re.compile(r'\ +')
                 conv = re.sub(duplicateSpacePattern, ' ', conv)
                 context = re.sub(duplicateSpacePattern, ' ', context)
                 sent = re.sub(duplicateSpacePattern, ' ', sent)
+                turn1 = re.sub(duplicateSpacePattern, ' ', turn1)
+                turn2 = re.sub(duplicateSpacePattern, ' ', turn2)
+                turn3 = re.sub(duplicateSpacePattern, ' ', turn3)
 
                 indices.append(int(line[0]))
                 raws.append(tokenizer.tokenize(conv))
                 raws_c.append(tokenizer.tokenize(context))
                 raws_s.append(tokenizer.tokenize(sent))
+                raws_turn1.append(tokenizer.tokenize(turn1))
+                raws_turn2.append(tokenizer.tokenize(turn2))
+                raws_turn3.append(tokenizer.tokenize(turn3))
                 conversations.append(conv)
                 contexts.append(context)
                 sents.append(sent)
+                turn1s.append(turn1)
+                turn2s.append(turn2)
+                turn3s.append(turn3)
 
         examples = []
         if mode == 'train':
@@ -158,18 +205,30 @@ class EMO(data.Dataset):
                 examples.append([raws[i],
                                  raws_c[i],
                                  raws_s[i],
+                                 raws_turn1[i],
+                                 raws_turn2[i],
+                                 raws_turn3[i],
                                  conversations[i],
                                  contexts[i],
                                  sents[i],
+                                 turn1s[i],
+                                 turn2s[i],
+                                 turn3s[i],
                                  labels[i]])
         else:
             for i in range(len(conversations)):
                 examples.append([raws[i],
                                  raws_c[i],
                                  raws_s[i],
+                                 raws_turn1[i],
+                                 raws_turn2[i],
+                                 raws_turn3[i],
                                  conversations[i],
                                  contexts[i],
-                                 sents[i]])
+                                 sents[i],
+                                 turn1s[i],
+                                 turn2s[i],
+                                 turn3s[i]])
         return examples
 
 

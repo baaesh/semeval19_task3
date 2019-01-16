@@ -8,7 +8,7 @@ import numpy as np
 
 from data import EMO_test
 from config import set_args
-from model import NN4EMO, NN4EMO_FUSION, NN4EMO_ENSEMBLE
+from model import NN4EMO, NN4EMO_FUSION, NN4EMO_ENSEMBLE, NN4EMO_SEPERATE
 
 
 def predict(model, args, data):
@@ -23,6 +23,13 @@ def predict(model, args, data):
                 char_s = torch.LongTensor(data.characterize(batch.sent[0])).to(args.device)
                 setattr(batch, 'char_c', char_c)
                 setattr(batch, 'char_s', char_s)
+            elif args.seperate:
+                char_turn1 = torch.LongTensor(data.characterize(batch.turn1[0])).to(args.device)
+                char_turn2 = torch.LongTensor(data.characterize(batch.turn2[0])).to(args.device)
+                char_turn3 = torch.LongTensor(data.characterize(batch.turn3[0])).to(args.device)
+                setattr(batch, 'char_turn1', char_turn1)
+                setattr(batch, 'char_turn2', char_turn2)
+                setattr(batch, 'char_turn3', char_turn3)
             else:
                 char = torch.LongTensor(data.characterize(batch.text[0])).to(args.device)
                 setattr(batch, 'char', char)
@@ -35,7 +42,7 @@ def predict(model, args, data):
 
 
 def submission():
-    model_name = 'SAN4EMO_03:43:05_0.7539.pt'
+    model_name = 'SAN4EMO_08:44:55_0.7538.pt'
     args = set_args()
 
     # loading EmoContext data
@@ -54,6 +61,8 @@ def submission():
         model = NN4EMO_FUSION(args, data).to(device)
     elif args.ensemble:
         model = NN4EMO_ENSEMBLE(args, data).to(device)
+    elif args.seperate:
+        model = NN4EMO_SEPERATE(args, data).to(device)
     else:
         model = NN4EMO(args, data).to(device)
 

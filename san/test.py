@@ -17,6 +17,13 @@ def test(model, data, criterion, args):
                 char_s = torch.LongTensor(data.characterize(batch.sent[0])).to(args.device)
                 setattr(batch, 'char_c', char_c)
                 setattr(batch, 'char_s', char_s)
+            elif args.seperate:
+                char_turn1 = torch.LongTensor(data.characterize(batch.turn1[0])).to(args.device)
+                char_turn2 = torch.LongTensor(data.characterize(batch.turn2[0])).to(args.device)
+                char_turn3 = torch.LongTensor(data.characterize(batch.turn3[0])).to(args.device)
+                setattr(batch, 'char_turn1', char_turn1)
+                setattr(batch, 'char_turn2', char_turn2)
+                setattr(batch, 'char_turn3', char_turn3)
             else:
                 char = torch.LongTensor(data.characterize(batch.text[0])).to(args.device)
                 setattr(batch, 'char', char)
