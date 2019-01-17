@@ -233,7 +233,7 @@ class EMO(data.Dataset):
 
 
     @classmethod
-    def splits(cls, raw_field, text_field, label_field, trainDataPath, validDataPath, root='.', **kwargs):
+    def splits(cls, raw_field, text_field, label_field, trainDataPath, validDataPath, testDataPath, root='.', **kwargs):
         """Create dataset objects for splits of the dataset.
         Arguments:
             text_field: The field that will be used for the sentence.
@@ -247,10 +247,11 @@ class EMO(data.Dataset):
                 Dataset.
         """
         return (cls(raw_field, text_field, label_field, path=trainDataPath, mode='train', **kwargs),
-                cls(raw_field, text_field, label_field, path=validDataPath, mode='train', **kwargs))
+                cls(raw_field, text_field, label_field, path=validDataPath, mode='train', **kwargs),
+                cls(raw_field, text_field, None, path=testDataPath, mode='test', **kwargs))
 
 
     @classmethod
     def getTestData(cls, raw_field, text_field):
-        testDataPath = './data/raw/devwithoutlabels.txt'
+        testDataPath = './data/raw/testwithoutlabels.txt'
         return cls(raw_field, text_field, None, path=testDataPath, mode='test')

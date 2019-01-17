@@ -15,17 +15,19 @@ import datasets
 class EMO():
 
     def __init__(self, args):
-        #tokenizer = TweetTokenizer()
-        tokenizer = SocialTokenizer(lowercase=True)
+        if args.datastories:
+            tokenizer = SocialTokenizer(lowercase=True)
+        else:
+            tokenizer = TweetTokenizer()
         self.RAW = data.RawField()
         self.TEXT = data.Field(batch_first=True, include_lengths=True,
                                lower=True, tokenize=tokenizer.tokenize)
         self.LABEL = data.Field(sequential=False, unk_token=None)
 
-        self.train, self.dev = datasets.EMO.splits(self.RAW, self.TEXT, self.LABEL,
-                                                   args.train_data_path, args.valid_data_path)
+        self.train, self.dev, self.test = datasets.EMO.splits(self.RAW, self.TEXT, self.LABEL,
+                                                   args.train_data_path, args.valid_data_path, args.test_data_path)
 
-        self.TEXT.build_vocab(self.train, self.dev, vectors=GloVe(name='840B', dim=300))
+        self.TEXT.build_vocab(self.train, self.dev, self.test, vectors=GloVe(name='840B', dim=300))
 
         if args.fasttext:
             self.FASTTEXT = data.Field(batch_first=True, include_lengths=True,
@@ -82,8 +84,10 @@ class EMO():
 class EMO_test():
 
     def __init__(self, args):
-        #tokenizer = TweetTokenizer()
-        tokenizer = SocialTokenizer(lowercase=True)
+        if args.datastories:
+            tokenizer = SocialTokenizer(lowercase=True)
+        else:
+            tokenizer = TweetTokenizer()
         self.RAW = data.RawField()
         self.TEXT = data.Field(batch_first=True, include_lengths=True,
                                lower=True, tokenize=tokenizer.tokenize)

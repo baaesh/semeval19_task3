@@ -42,7 +42,7 @@ def predict(model, args, data):
 
 
 def submission():
-    model_name = 'SAN4EMO_08:44:55_0.7538.pt'
+    model_name = 'SAN4EMO_07:39:55_0.7630.pt'
     args = set_args()
 
     # loading EmoContext data
@@ -78,7 +78,7 @@ def submission():
         os.makedirs('submissions')
 
     solutionPath = './submissions/' + model_name + '.txt'
-    testDataPath = './data/raw/devwithoutlabels.txt'
+    testDataPath = './data/raw/testwithoutlabels.txt'
     with io.open(solutionPath, "w", encoding="utf8") as fout:
         fout.write('\t'.join(["id", "turn1", "turn2", "turn3", "label"]) + '\n')
         with io.open(testDataPath, encoding="utf8") as fin:

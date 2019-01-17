@@ -186,7 +186,7 @@ def submission(args, model_name):
         os.makedirs('submissions')
 
     solutionPath = './submissions/' + model_name + '.txt'
-    testDataPath = './data/raw/devwithoutlabels.txt'
+    testDataPath = './data/raw/testwithoutlabels.txt'
     with io.open(solutionPath, "w", encoding="utf8") as fout:
         fout.write('\t'.join(["id", "turn1", "turn2", "turn3", "label"]) + '\n')
         with io.open(testDataPath, encoding="utf8") as fin:
