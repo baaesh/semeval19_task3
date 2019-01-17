@@ -342,10 +342,12 @@ class NN4EMO_SEPERATE(nn.Module):
 
         if args.simple_encoder:
             self.sentence_encoder_turn1 = SimpleEncoder(args, data)
-            self.fc_dim = 2 * args.d_e * 3
+            self.fc_dim = 2 * args.d_e * 4 + 2 * args.lstm_hidden_dim
+            self.lstm_dim = 2 * args.d_e
         else:
             self.sentence_encoder_turn1 = SentenceEncoder(args, data)
-            self.fc_dim = 2 * args.d_e * 2 * 3
+            self.fc_dim = 2 * args.d_e * 2 * 4 + 2 * args.lstm_hidden_dim
+            self.lstm_dim = 2 * args.d_e * 2
 
         if args.share_encoder:
             self.sentence_encoder_turn2 = self.sentence_encoder_turn1
@@ -357,6 +359,8 @@ class NN4EMO_SEPERATE(nn.Module):
             else:
                 self.sentence_encoder_turn2 = SentenceEncoder(args, data)
                 self.sentence_encoder_turn3 = SentenceEncoder(args, data)
+
+        self.lstm = LSTMEncoder(args, input_dim=self.lstm_dim, last_hidden=True)
 
         self.fc1 = nn.Linear(self.fc_dim, args.d_e)
         self.fc2 = nn.Linear(self.fc_dim + args.d_e, args.d_e)
@@ -417,7 +421,11 @@ class NN4EMO_SEPERATE(nn.Module):
                                               rep_mask_turn3,
                                               lens_turn3, seq_turn3)
 
-        s = torch.cat([s_turn1, s_turn2, s_turn3], dim=-1)
+        s_lstm_in = torch.stack([s_turn1, s_turn2, s_turn3], dim=1)
+        s_lstm_out = self.lstm(s_lstm_in, torch.LongTensor([3]*s_lstm_in.size()[0]))
+
+        s = torch.cat([s_turn1, s_turn2, s_turn3, s_lstm_out,
+                       s_turn1 - s_turn2 + s_turn3], dim=-1)
 
         outputs = self.fc1(s)
         outputs = self.relu(outputs)

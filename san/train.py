@@ -248,7 +248,6 @@ def build_datastories_vectors(data):
         print('Found %s word vectors.' % len(embeddings_dict))
 
 
-
 def main():
     args = set_args()
 
