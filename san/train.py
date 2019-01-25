@@ -66,7 +66,7 @@ def train(args, data):
     iterator = data.train_iter
     for epoch in range(args.max_epoch):
         print('epoch: ', epoch + 1)
-        scheduler.step()
+        #scheduler.step()
         for i, batch in enumerate(iterator):
             if args.char_emb:
                 if args.fusion:
@@ -135,7 +135,19 @@ def predict(model, args, data):
     iterator = data.test_iter
     model.eval()
     preds = []
-    softmax = nn.Softmax(dim=1)
+
+    if args.thresholding:
+        others_idx = data.LABEL.vocab.stoi['others']
+        happy_idx = data.LABEL.vocab.stoi['happy']
+        sad_idx = data.LABEL.vocab.stoi['sad']
+        angry_idx = data.LABEL.vocab.stoi['angry']
+        reverse_prior = [0.1] * args.class_size
+        reverse_prior[others_idx] = 0.848 / 0.495
+        reverse_prior[happy_idx] = 0.051 / 0.14
+        reverse_prior[sad_idx] = 0.045 / 0.181
+        reverse_prior[angry_idx] = 0.054 / 0.182
+        reverse_prior = torch.tensor(reverse_prior)
+
     for batch in iter(iterator):
         if args.char_emb:
             if args.fusion:
@@ -154,8 +166,15 @@ def predict(model, args, data):
                 char = torch.LongTensor(data.characterize(batch.text[0])).to(args.device)
                 setattr(batch, 'char', char)
         pred = model(batch)
-        pred = softmax(pred)
-        preds.append(pred.detach().cpu().numpy())
+
+        pred = torch.softmax(pred.detach(), dim=1)
+        if args.thresholding:
+            if reverse_prior.type() != pred.data.type():
+                reverse_prior = reverse_prior.type_as(pred.data).to(pred.get_device())
+            at = reverse_prior.repeat(pred.size()[0], 1)
+            pred = pred * at
+
+        preds.append(pred.cpu().numpy())
     preds = np.concatenate(preds)
 
     return preds
@@ -182,10 +201,10 @@ def submission(args, model_name):
     print(maxs)
     preds = preds.argmax(axis=1)
 
-    if not os.path.exists('submissions'):
-        os.makedirs('submissions')
+    if not os.path.exists('final_submissions'):
+        os.makedirs('final_submissions')
 
-    solutionPath = './submissions/' + model_name + '.txt'
+    solutionPath = './final_submissions/' + model_name + '.txt'
     testDataPath = './data/raw/testwithoutlabels.txt'
     with io.open(solutionPath, "w", encoding="utf8") as fout:
         fout.write('\t'.join(["id", "turn1", "turn2", "turn3", "label"]) + '\n')
@@ -268,9 +287,25 @@ def main():
 
     best_model, max_dev_f1 = train(args, data)
 
+    if args.fusion:
+        model_name_str = 'NN4EMO_FUSION'
+    elif args.ensemble:
+        model_name_str = 'NN4EMO_ENSEMBLE'
+    elif args.seperate:
+        model_name_str = 'NN4EMO_SEPARATE'
+    else:
+        model_name_str = 'NN4EMO'
+    
+    if args.simple_encoder:
+        model_name_str += '_SIMPLE'
+    if args.bootstrap:
+        model_name_str += '_BOOTSTRAP'
+    if args.thresholding:
+        model_name_str += '_THRESHOLDING'
+    
     if not os.path.exists('saved_models'):
         os.makedirs('saved_models')
-    model_name = f'SAN4EMO_{args.model_time}_{max_dev_f1:.4f}.pt'
+    model_name = f'{model_name_str}_{args.model_time}_{max_dev_f1:.4f}.pt'
     torch.save(best_model, 'saved_models/' + model_name)
 
     print('training finished!')

@@ -35,11 +35,14 @@ def model_config(parser):
     parser.add_argument('--lstm_hidden_dim', type=int, default=150)
 
     parser.add_argument('--simple_encoder', default=False, action='store_true')
+    parser.add_argument('--uni_encoder', default=False, action='store_true')
 
     parser.add_argument('--fusion', default=False, action='store_true')
     parser.add_argument('--no_share_encoder', dest='share_encoder', action='store_false')
 
     parser.add_argument('--seperate', default=False, action='store_true')
+    parser.add_argument('--turn2', default=False, action='store_true')
+    parser.add_argument('--no_turn2', default=False, action='store_true')
 
     parser.add_argument('--biattention', default=False, action='store_true')
 
@@ -77,6 +80,8 @@ def train_config(parser):
     parser.add_argument('--fl_alpha', type=float, default=None)
     parser.add_argument('--mfe_loss', default=False, action='store_true')
     parser.add_argument('--mfe_alpha', type=float, default=0.75)
+    parser.add_argument('--bootstrap', default=False, action='store_true')
+    parser.add_argument('--thresholding', default=False, action='store_true')
 
     return parser
 

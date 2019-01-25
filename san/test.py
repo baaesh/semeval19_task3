@@ -8,6 +8,18 @@ def test(model, data, criterion, args):
     model.eval()
     acc, loss, size = 0, 0, 0
 
+    if args.thresholding:
+        others_idx = data.LABEL.vocab.stoi['others']
+        happy_idx = data.LABEL.vocab.stoi['happy']
+        sad_idx = data.LABEL.vocab.stoi['sad']
+        angry_idx = data.LABEL.vocab.stoi['angry']
+        reverse_prior = [0.1] * args.class_size
+        reverse_prior[others_idx] = 0.848 / 0.495
+        reverse_prior[happy_idx] = 0.051 / 0.14
+        reverse_prior[sad_idx] = 0.045 / 0.181
+        reverse_prior[angry_idx] = 0.054 / 0.182
+        reverse_prior = torch.tensor(reverse_prior)
+
     preds = []
     labels = []
     for batch in iter(iterator):
@@ -33,7 +45,14 @@ def test(model, data, criterion, args):
         batch_loss = criterion(pred, batch.label)
         loss += batch_loss.item()
 
-        preds.append(pred.detach().cpu().numpy())
+        pred = pred.detach()
+        if args.thresholding:
+            if reverse_prior.type() != pred.data.type():
+                reverse_prior = reverse_prior.type_as(pred.data).to(pred.get_device())
+            at = reverse_prior.repeat(pred.size()[0], 1)
+            pred = torch.softmax(pred, dim=1) * at
+
+        preds.append(pred.cpu().numpy())
         labels.append(batch.label.cpu().numpy())
         _, pred = pred.max(dim=1)
         acc += (pred == batch.label).sum().float().cpu().item()
