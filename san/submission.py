@@ -74,10 +74,10 @@ def submission():
     print(maxs)
     preds = preds.argmax(axis=1)
 
-    if not os.path.exists('submissions'):
-        os.makedirs('submissions')
+    if not os.path.exists('final_submissions'):
+        os.makedirs('final_submissions')
 
-    solutionPath = './submissions/' + model_name + '.txt'
+    solutionPath = './final_submissions/' + model_name + '.txt'
     testDataPath = './data/raw/testwithoutlabels.txt'
     with io.open(solutionPath, "w", encoding="utf8") as fout:
         fout.write('\t'.join(["id", "turn1", "turn2", "turn3", "label"]) + '\n')
