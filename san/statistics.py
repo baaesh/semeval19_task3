@@ -54,12 +54,24 @@ def getStatistics(dataFilePath, mode):
             conversations.append(conv.lower())
 
     count = 0
+    happy = 0
+    sad = 0
+    angry = 0
+    others =0
     for i in range(len(labels)):
-        if labels[i] != 0:
-            count += 1
+        if labels[i] == 0:
+            others += 1
+        elif labels[i] == 1:
+            happy += 1
+        elif labels[i] == 2:
+            sad += 1
+        elif labels[i] == 3:
+            angry += 1
 
-    print(count)
-    print(count/len(labels))
+    print('ohers: ' + str(others/len(labels)))
+    print('happy: ' + str(happy/len(labels)))
+    print('sad: ' + str(sad/len(labels)))
+    print('angry: ' + str(angry/len(labels)))
     return count
 
 
@@ -68,4 +80,4 @@ if __name__ == '__main__':
     parser.add_argument('--name', default='test.txt')
     args = parser.parse_args()
 
-    getStatistics('./submissions/' + args.name, 'train')
+    getStatistics(args.name, 'train')
