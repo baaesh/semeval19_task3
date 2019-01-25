@@ -2,7 +2,7 @@ import os
 import io
 import random
 
-dataFilePath = 'raw/train.txt'
+dataFilePath = 'train_emoji.txt'
 others = []
 emotional = []
 head = ''
@@ -17,7 +17,7 @@ with io.open(dataFilePath, encoding="utf8") as finput:
         else:
             emotional.append(line)
 
-train_set = others * 5 + emotional
+train_set = others * 6 + emotional
 random.shuffle(train_set)
 
 with open('train_oversampled.txt', 'w', encoding='utf-8') as f:
