@@ -259,8 +259,8 @@ class NN4EMO_FUSION(nn.Module):
 
         outputs = self.fc1(s)
         outputs = self.relu(outputs)
-        #outputs = self.fc2(torch.cat([s, outputs], dim=-1))
-        #outputs = self.relu(outputs)
+        outputs = self.fc2(torch.cat([s, outputs], dim=-1))
+        outputs = self.relu(outputs)
         outputs = self.fc_out(outputs)
 
         return outputs
@@ -340,7 +340,19 @@ class NN4EMO_SEPERATE(nn.Module):
             if not args.word2vec_tune:
                 self.ss_emb.weight.requires_grad = False
 
-        if args.simple_encoder:
+        # character embedding
+        self.char_emb = nn.Embedding(args.char_vocab_size, args.char_dim, padding_idx=0)
+        self.charCNN = CharCNN(args)
+
+        if args.uni_encoder:
+            self.sentence_encoder_turn1 = UniEncoder(args, data)
+            if args.simple_encoder:
+                self.fc_dim = 2 * args.lstm_hidden_dim * 5
+                self.lstm_dim = 2 * args.lstm_hidden_dim
+            else:
+                self.fc_dim = 2 * args.lstm_hidden_dim * 4 * 2 + 2 * args.lstm_hidden_dim
+                self.lstm_dim = 2 * args.lstm_hidden_dim * 2
+        elif args.simple_encoder:
             self.sentence_encoder_turn1 = SimpleEncoder(args, data)
             self.fc_dim = 2 * args.d_e * 4 + 2 * args.lstm_hidden_dim
             self.lstm_dim = 2 * args.d_e
@@ -350,10 +362,21 @@ class NN4EMO_SEPERATE(nn.Module):
             self.lstm_dim = 2 * args.d_e * 2
 
         if args.share_encoder:
-            self.sentence_encoder_turn2 = self.sentence_encoder_turn1
             self.sentence_encoder_turn3 = self.sentence_encoder_turn1
+            if args.turn2:
+                if args.uni_encoder:
+                    self.sentence_encoder_turn2 = UniEncoder(args, data)
+                elif args.simple_encoder:
+                    self.sentence_encoder_turn2 = SimpleEncoder(args, data)
+                else:
+                    self.sentence_encoder_turn2 = SentenceEncoder(args, data)
+            else:
+                self.sentence_encoder_turn2 = self.sentence_encoder_turn1
         else:
-            if args.simple_encoder:
+            if args.uni_encoder:
+                self.sentence_encoder_turn2 = UniEncoder(args, data)
+                self.sentence_encoder_turn3 = UniEncoder(args, data)
+            elif args.simple_encoder:
                 self.sentence_encoder_turn2 = SimpleEncoder(args, data)
                 self.sentence_encoder_turn3 = SimpleEncoder(args, data)
             else:
@@ -361,6 +384,12 @@ class NN4EMO_SEPERATE(nn.Module):
                 self.sentence_encoder_turn3 = SentenceEncoder(args, data)
 
         self.lstm = LSTMEncoder(args, input_dim=self.lstm_dim, last_hidden=True)
+
+        if args.no_turn2:
+            if args.simple_encoder:
+                self.fc_dim = 2 * args.d_e * 4
+            else:
+                self.fc_dim = 2 * args.d_e * 2 * 4
 
         self.fc1 = nn.Linear(self.fc_dim, args.d_e)
         self.fc2 = nn.Linear(self.fc_dim + args.d_e, args.d_e)
@@ -398,34 +427,56 @@ class NN4EMO_SEPERATE(nn.Module):
         x_turn3_1 = self.glove_emb(seq_turn3)
         x_turn3_2 = self.ss_emb(seq_turn3)
 
+        # character embedding
+        # (batch, seq_len, max_word_len)
+        batch_size, seq_len_turn1, _ = batch_char_turn1.size()
+        batch_size, seq_len_turn2, _ = batch_char_turn2.size()
+        batch_size, seq_len_turn3, _ = batch_char_turn3.size()
+
+        # (batch * seq_len, max_word_len)
+        char_turn1 = batch_char_turn1.view(-1, self.args.max_word_len)
+        char_turn2 = batch_char_turn2.view(-1, self.args.max_word_len)
+        char_turn3 = batch_char_turn3.view(-1, self.args.max_word_len)
+
+        # (batch * seq_len, max_word_len, char_dim)
+        char_turn1 = self.char_emb(char_turn1)
+        char_turn2 = self.char_emb(char_turn2)
+        char_turn3 = self.char_emb(char_turn3)
+
+        # (batch, seq_len, len(FILTER_SIZES) * num_feature_maps)
+        char_turn1 = self.charCNN(char_turn1).view(batch_size, seq_len_turn1, -1)
+        char_turn2 = self.charCNN(char_turn2).view(batch_size, seq_len_turn2, -1)
+        char_turn3 = self.charCNN(char_turn3).view(batch_size, seq_len_turn3, -1)
+
         # (batch, seq_len, 1)
         rep_mask_turn1 = get_rep_mask(lens_turn1, self.device)
         rep_mask_turn2 = get_rep_mask(lens_turn2, self.device)
         rep_mask_turn3 = get_rep_mask(lens_turn3, self.device)
 
-
         # (batch, seq_len, 4 * d_e)
         s_turn1 = self.sentence_encoder_turn1(x_turn1_1, x_turn1_2,
-                                              batch_char_turn1,
+                                              char_turn1,
                                               batch_raw_turn1,
                                               rep_mask_turn1,
                                               lens_turn1, seq_turn1)
         s_turn2 = self.sentence_encoder_turn2(x_turn2_1, x_turn2_2,
-                                              batch_char_turn2,
+                                              char_turn2,
                                               batch_raw_turn2,
                                               rep_mask_turn2,
                                               lens_turn2, seq_turn2)
         s_turn3 = self.sentence_encoder_turn3(x_turn3_1, x_turn3_2,
-                                              batch_char_turn3,
+                                              char_turn3,
                                               batch_raw_turn3,
                                               rep_mask_turn3,
                                               lens_turn3, seq_turn3)
+        if self.args.no_turn2:
+            s = torch.cat([s_turn1, s_turn3, s_turn1 - s_turn3, s_turn1 * s_turn3], dim=-1)
+        else:
+            s_lstm_in = torch.stack([s_turn1, s_turn2, s_turn3], dim=1)
+            s_lstm_out = self.lstm(s_lstm_in, torch.LongTensor([3]*s_lstm_in.size()[0]))
 
-        s_lstm_in = torch.stack([s_turn1, s_turn2, s_turn3], dim=1)
-        s_lstm_out = self.lstm(s_lstm_in, torch.LongTensor([3]*s_lstm_in.size()[0]))
-
-        s = torch.cat([s_turn1, s_turn2, s_turn3, s_lstm_out,
-                       s_turn1 - s_turn2 + s_turn3], dim=-1)
+            s = torch.cat([s_turn1, s_turn2, s_turn3, s_lstm_out,
+                           s_turn1 - s_turn2 + s_turn3], dim=-1)
 
         outputs = self.fc1(s)
         outputs = self.relu(outputs)
