@@ -14,7 +14,7 @@ class EMO(data.Dataset):
     def sort_key(ex):
         return len(ex.text)
 
-    def __init__(self, raw_field, text_field, label_field, examples=None, path=None, mode='train', **kwargs):
+    def __init__(self, args, raw_field, text_field, label_field, examples=None, path=None, mode='train', **kwargs):
         """Create an dataset instance given a path and fields.
         Arguments:
             text_field: The field that will be used for text data.
@@ -54,7 +54,7 @@ class EMO(data.Dataset):
                       ('turn3', text_field)]
 
         if examples is None:
-            dataset = self.preprocessData(path, mode)
+            dataset = self.preprocessData(args, path, mode)
             examples = []
             if mode == 'train':
                 examples += [
@@ -111,7 +111,7 @@ class EMO(data.Dataset):
         return string.strip()
 
 
-    def preprocessData(self, dataFilePath, mode):
+    def preprocessData(self, args, dataFilePath, mode):
         """Load data from a file, process and return indices, conversations and labels in separate lists
         Input:
             dataFilePath : Path to train/test file to be processed
@@ -138,8 +138,11 @@ class EMO(data.Dataset):
         turn2s = []
         turn3s = []
 
-        #tokenizer = TweetTokenizer()
-        tokenizer = SocialTokenizer(lowercase=True)
+        if args.datastories:
+            tokenizer = SocialTokenizer(lowercase=True)
+        else:
+            tokenizer = TweetTokenizer()
+            
         with io.open(dataFilePath, encoding="utf8") as finput:
             finput.readline()
             for line in finput:
@@ -233,7 +236,7 @@ class EMO(data.Dataset):
 
 
     @classmethod
-    def splits(cls, raw_field, text_field, label_field, trainDataPath, validDataPath, testDataPath, root='.', **kwargs):
+    def splits(cls, args, raw_field, text_field, label_field, trainDataPath, validDataPath, testDataPath, root='.', **kwargs):
         """Create dataset objects for splits of the dataset.
         Arguments:
             text_field: The field that will be used for the sentence.
@@ -246,12 +249,11 @@ class EMO(data.Dataset):
             Remaining keyword arguments: Passed to the splits method of
                 Dataset.
         """
-        return (cls(raw_field, text_field, label_field, path=trainDataPath, mode='train', **kwargs),
-                cls(raw_field, text_field, label_field, path=validDataPath, mode='train', **kwargs),
-                cls(raw_field, text_field, None, path=testDataPath, mode='test', **kwargs))
+        return (cls(args, raw_field, text_field, label_field, path=trainDataPath, mode='train', **kwargs),
+                cls(args, raw_field, text_field, label_field, path=validDataPath, mode='train', **kwargs),
+                cls(args, raw_field, text_field, None, path=testDataPath, mode='test', **kwargs))
 
 
     @classmethod
-    def getTestData(cls, raw_field, text_field):
-        testDataPath = './data/raw/testwithoutlabels.txt'
-        return cls(raw_field, text_field, None, path=testDataPath, mode='test')
+    def getTestData(cls, args, raw_field, text_field, testDataPath):
+        return cls(args, raw_field, text_field, None, path=testDataPath, mode='test')
