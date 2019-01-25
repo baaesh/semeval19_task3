@@ -24,7 +24,7 @@ class EMO():
                                lower=True, tokenize=tokenizer.tokenize)
         self.LABEL = data.Field(sequential=False, unk_token=None)
 
-        self.train, self.dev, self.test = datasets.EMO.splits(self.RAW, self.TEXT, self.LABEL,
+        self.train, self.dev, self.test = datasets.EMO.splits(args, self.RAW, self.TEXT, self.LABEL,
                                                    args.train_data_path, args.valid_data_path, args.test_data_path)
 
         self.TEXT.build_vocab(self.train, self.dev, self.test, vectors=GloVe(name='840B', dim=300))
@@ -98,7 +98,7 @@ class EMO_test():
         filehandler = open('./data/label.obj', 'rb')
         self.LABEL.vocab = pickle.load(filehandler)
 
-        self.test = datasets.EMO.getTestData(self.RAW, self.TEXT)
+        self.test = datasets.EMO.getTestData(args, self.RAW, self.TEXT, args.test_data_path)
 
         self.test_iter = \
             data.Iterator(self.test,
