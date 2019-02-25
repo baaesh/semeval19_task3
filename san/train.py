@@ -43,7 +43,16 @@ def train(args, data):
             alpha = [(1.-args.fl_alpha)/3.] * args.class_size
             alpha[others_idx] = args.fl_alpha
         else:
-            alpha = None
+            others_idx = data.LABEL.vocab.stoi['others']
+            happy_idx = data.LABEL.vocab.stoi['happy']
+            sad_idx = data.LABEL.vocab.stoi['sad']
+            angry_idx = data.LABEL.vocab.stoi['angry']
+            alpha = [1.0] * args.class_size
+            alpha[others_idx] = 0.848 / 0.495
+            alpha[happy_idx] = 0.051 / 0.14
+            alpha[sad_idx] = 0.045 / 0.181
+            alpha[angry_idx] = 0.054 / 0.182
+
         criterion = FocalLoss(gamma=args.fl_gamma,
                                alpha=alpha, size_average=True).to(device)
     else:
@@ -58,8 +67,8 @@ def train(args, data):
     model.train()
 
     acc, loss, size, last_epoch = 0, 0, 0, -1
-    max_dev_acc = 0
-    max_dev_f1 = 0
+    max_dev_acc, max_test_acc = 0, 0
+    max_dev_f1, max_test_f1 = 0, 0
     best_model = None
 
     print("tarining start")
@@ -114,21 +123,28 @@ def train(args, data):
 
             if (i + 1) % args.validate_every == 0:
                 c = (i + 1) // args.validate_every
-                dev_loss, dev_acc, dev_f1 = test(model, data, criterion, args)
+                dev_loss, dev_acc, dev_f1 = test(model, data, data.dev_iter, criterion, args)
+                test_loss, test_acc, test_f1 = test(model, data, data.test_iter, criterion, args)
                 if dev_acc > max_dev_acc:
                     max_dev_acc = dev_acc
                 if dev_f1 > max_dev_f1:
                     max_dev_f1 = dev_f1
+                    max_test_acc = test_acc
+                    max_test_f1 = test_f1
                     best_model = copy.deepcopy(model.state_dict())
                 writer.add_scalar('loss/dev', dev_loss, c)
                 writer.add_scalar('acc/dev', dev_acc, c)
                 writer.add_scalar('f1/dev', dev_f1, c)
-                print(f'dev loss: {dev_loss:.4f} / dev acc: {dev_acc:.4f} / dev f1: {dev_f1:.4f} '
-                      f'(max dev acc: {max_dev_acc:.4f} / max dev f1: {max_dev_f1:.4f})')
+                writer.add_scalar('acc/test', test_acc, c)
+                writer.add_scalar('f1/test', test_f1, c)
+                print(f'dev loss: {dev_loss:.4f} / dev acc: {dev_acc:.4f} / dev f1: {dev_f1:.4f} / '
+                      f'test acc: {test_acc:.4f} / test f1: {test_f1:.4f}')
+                print(f'(max dev acc: {max_dev_acc:.4f} / max dev f1: {max_dev_f1:.4f} / '
+                      f'max test acc: {max_test_acc:.4f} / max test f1: {max_test_f1:.4f})')
                 model.train()
 
     writer.close()
-    return best_model, max_dev_f1
+    return best_model, max_test_acc, max_test_f1
 
 
 def predict(model, args, data):
@@ -201,10 +217,10 @@ def submission(args, model_name):
     print(maxs)
     preds = preds.argmax(axis=1)
 
-    if not os.path.exists('final_submissions'):
-        os.makedirs('final_submissions')
+    if not os.path.exists('experiments'):
+        os.makedirs('experiments')
 
-    solutionPath = './final_submissions/' + model_name + '.txt'
+    solutionPath = './experiments/' + model_name + '.txt'
     testDataPath = './data/raw/testwithoutlabels.txt'
     with io.open(solutionPath, "w", encoding="utf8") as fout:
         fout.write('\t'.join(["id", "turn1", "turn2", "turn3", "label"]) + '\n')
@@ -285,27 +301,13 @@ def main():
 
     build_sswe_vectors()
 
-    best_model, max_dev_f1 = train(args, data)
+    best_model, max_test_acc, max_test_f1 = train(args, data)
 
-    if args.fusion:
-        model_name_str = 'NN4EMO_FUSION'
-    elif args.ensemble:
-        model_name_str = 'NN4EMO_ENSEMBLE'
-    elif args.seperate:
-        model_name_str = 'NN4EMO_SEPARATE'
-    else:
-        model_name_str = 'NN4EMO'
-    
-    if args.simple_encoder:
-        model_name_str += '_SIMPLE'
-    if args.bootstrap:
-        model_name_str += '_BOOTSTRAP'
-    if args.thresholding:
-        model_name_str += '_THRESHOLDING'
+    model_name_str = 'NN4EMO_' + args.name_tag
     
     if not os.path.exists('saved_models'):
         os.makedirs('saved_models')
-    model_name = f'{model_name_str}_{args.model_time}_{max_dev_f1:.4f}.pt'
+    model_name = f'{model_name_str}_{args.model_time}_{max_test_acc:.4f}_{max_test_f1:.4f}.pt'
     torch.save(best_model, 'saved_models/' + model_name)
 
     print('training finished!')

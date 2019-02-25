@@ -251,7 +251,7 @@ class EMO(data.Dataset):
         """
         return (cls(args, raw_field, text_field, label_field, path=trainDataPath, mode='train', **kwargs),
                 cls(args, raw_field, text_field, label_field, path=validDataPath, mode='train', **kwargs),
-                cls(args, raw_field, text_field, None, path=testDataPath, mode='test', **kwargs))
+                cls(args, raw_field, text_field, label_field, path=testDataPath, mode='train', **kwargs))
 
 
     @classmethod

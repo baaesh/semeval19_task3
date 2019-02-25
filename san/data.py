@@ -37,8 +37,8 @@ class EMO():
                                             vectors=FastText(language='en'), dim=300)
         self.LABEL.build_vocab(self.train)
 
-        self.train_iter, self.dev_iter = \
-            data.BucketIterator.splits((self.train, self.dev),
+        self.train_iter, self.dev_iter, self.test_iter = \
+            data.BucketIterator.splits((self.train, self.dev, self.test),
                                        batch_size=args.batch_size,
                                        device=args.device,
                                        repeat=False)

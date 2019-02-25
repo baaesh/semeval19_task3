@@ -2,9 +2,7 @@ import numpy as np
 import torch
 from keras.utils import to_categorical
 
-def test(model, data, criterion, args):
-    iterator = data.dev_iter
-
+def test(model, data, iterator, criterion, args):
     model.eval()
     acc, loss, size = 0, 0, 0
 

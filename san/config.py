@@ -80,8 +80,8 @@ def train_config(parser):
     parser.add_argument('--fl_alpha', type=float, default=None)
     parser.add_argument('--mfe_loss', default=False, action='store_true')
     parser.add_argument('--mfe_alpha', type=float, default=0.75)
-    parser.add_argument('--bootstrap', default=False, action='store_true')
     parser.add_argument('--thresholding', default=False, action='store_true')
+    parser.add_argument('--name_tag', default='')
 
     return parser
 
