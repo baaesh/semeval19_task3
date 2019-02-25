@@ -6,7 +6,8 @@ import random
 from torchtext import data
 from nltk.tokenize import TweetTokenizer
 from ekphrasis.classes.tokenizer import SocialTokenizer
-
+from oversample import oversampling
+from undersample import undersampling
 
 class EMO(data.Dataset):
 
@@ -111,7 +112,7 @@ class EMO(data.Dataset):
         return string.strip()
 
 
-    def preprocessData(self, args, dataFilePath, mode):
+    def preprocessData(self, args, dataFilePath, mode, sampling=None):
         """Load data from a file, process and return indices, conversations and labels in separate lists
         Input:
             dataFilePath : Path to train/test file to be processed
@@ -145,7 +146,14 @@ class EMO(data.Dataset):
             
         with io.open(dataFilePath, encoding="utf8") as finput:
             finput.readline()
-            for line in finput:
+            lines = finput.readlines()
+
+            if sampling == 'oversampling':
+                lines = oversampling(lines)
+            elif sampling == 'undersampling':
+                lines = undersampling(lines)
+
+            for line in lines:
                 # Convert multiple instances of . ? ! , to single instance
                 # okay...sure -> okay . sure
                 # okay???sure -> okay ? sure
@@ -249,7 +257,11 @@ class EMO(data.Dataset):
             Remaining keyword arguments: Passed to the splits method of
                 Dataset.
         """
-        return (cls(args, raw_field, text_field, label_field, path=trainDataPath, mode='train', **kwargs),
+        sampling = None
+        if args.oversampling: sampling = 'oversampling'
+        elif args.undersampling: sampling = 'undersampling'
+
+        return (cls(args, raw_field, text_field, label_field, path=trainDataPath, mode='train', sampling=sampling, **kwargs),
                 cls(args, raw_field, text_field, label_field, path=validDataPath, mode='train', **kwargs),
                 cls(args, raw_field, text_field, label_field, path=testDataPath, mode='train', **kwargs))
 
