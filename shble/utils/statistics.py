@@ -2,7 +2,7 @@ import io
 import argparse
 
 
-def getStatistics(dataFilePath, mode='train'):
+def getStatistics(dataFilePath, mode='train', print_statistics=False):
     """Load data from a file, process and return indices, conversations and labels in separate lists
     Input:
         dataFilePath : Path to train/test file to be processed
@@ -33,16 +33,16 @@ def getStatistics(dataFilePath, mode='train'):
             else:
                 print('error: ' + label)
             count += 1
-
-    print(mode + ' class distribution')
-    print('ohers: ' + str(others/count))
-    print(others)
-    print('happy: ' + str(happy/count))
-    print(happy)
-    print('sad: ' + str(sad/count))
-    print(sad)
-    print('angry: ' + str(angry/count))
-    print(angry)
+    if print_statistics:
+        print(mode + ' class distribution')
+        print('ohers: ' + str(others/count))
+        print(others)
+        print('happy: ' + str(happy/count))
+        print(happy)
+        print('sad: ' + str(sad/count))
+        print(sad)
+        print('angry: ' + str(angry/count))
+        print(angry)
     return [others/count, happy/count, sad/count, angry/count]
 
 
@@ -51,4 +51,4 @@ if __name__ == '__main__':
     parser.add_argument('--name', default='../data/raw/test.txt')
     args = parser.parse_args()
 
-    getStatistics(args.name, 'train')
+    getStatistics(args.name, 'train', True)
