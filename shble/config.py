@@ -56,6 +56,7 @@ def data_config(parser):
     parser.add_argument('--elmo_option_path', default='data/elmo/elmo_options.json')
     parser.add_argument('--elmo_weight_path', default='data/elmo/elmo_weights.hdf5')
     parser.add_argument('--ss_vector_path', default='data/sswe/sswe.pt')
+    parser.add_argument('--no_emoji_preprocess', dest='remove_duplicated_emojis', action='store_false')
 
     return parser
 

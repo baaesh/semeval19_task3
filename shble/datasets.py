@@ -8,6 +8,7 @@ from nltk.tokenize import TweetTokenizer
 from ekphrasis.classes.tokenizer import SocialTokenizer
 from oversample import oversampling
 from undersample import undersampling
+from preprocess import remove_duplicated_emojis
 
 class EMO(data.Dataset):
 
@@ -15,7 +16,7 @@ class EMO(data.Dataset):
     def sort_key(ex):
         return len(ex.text)
 
-    def __init__(self, args, raw_field, text_field, label_field, examples=None, path=None, mode='train', sampling=None, **kwargs):
+    def __init__(self, args, raw_field, text_field, label_field, examples=None, path=None, mode='train', **kwargs):
         """Create an dataset instance given a path and fields.
         Arguments:
             text_field: The field that will be used for text data.
@@ -112,7 +113,7 @@ class EMO(data.Dataset):
         return string.strip()
 
 
-    def preprocessData(self, args, dataFilePath, mode, sampling=None):
+    def preprocessData(self, args, dataFilePath, mode):
         """Load data from a file, process and return indices, conversations and labels in separate lists
         Input:
             dataFilePath : Path to train/test file to be processed
@@ -148,9 +149,12 @@ class EMO(data.Dataset):
             finput.readline()
             lines = finput.readlines()
 
-            if sampling == 'oversampling':
+            if args.remove_duplicated_emojis:
+                lines = remove_duplicated_emojis(lines)
+
+            if args.oversampling:
                 lines = oversampling(lines)
-            elif sampling == 'undersampling':
+            elif args.undersampling:
                 lines = undersampling(lines)
 
             for line in lines:
@@ -261,7 +265,7 @@ class EMO(data.Dataset):
         if args.oversampling: sampling = 'oversampling'
         elif args.undersampling: sampling = 'undersampling'
 
-        return (cls(args, raw_field, text_field, label_field, path=trainDataPath, mode='train', sampling=sampling, **kwargs),
+        return (cls(args, raw_field, text_field, label_field, path=trainDataPath, mode='train', **kwargs),
                 cls(args, raw_field, text_field, label_field, path=validDataPath, mode='train', **kwargs),
                 cls(args, raw_field, text_field, label_field, path=testDataPath, mode='train', **kwargs))
 
