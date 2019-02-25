@@ -2,7 +2,7 @@ import io
 import glob
 import numpy as np
 
-file_path_list = glob.glob('./ensemble/*.txt')
+file_path_list = glob.glob('../ensemble/*.txt')
 
 file_lines = []
 for file_path in file_path_list:

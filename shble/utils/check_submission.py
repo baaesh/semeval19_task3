@@ -2,7 +2,7 @@ import os
 import io
 import random
 
-dataFilePath = 'experiments/best.txt'
+dataFilePath = '../experiments/best.txt'
 
 with io.open(dataFilePath, encoding="utf8") as finput:
     finput.readline()

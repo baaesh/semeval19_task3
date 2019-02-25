@@ -8,7 +8,7 @@ args = parser.parse_args()
 with io.open(args.prediction_path, encoding='utf-8') as fpred:
     preds = fpred.readlines()
 
-with io.open('data/dev.txt', encoding='utf-8') as fdev:
+with io.open('../data/dev.txt', encoding='utf-8') as fdev:
     truths = fdev.readlines()
 
 

@@ -1,7 +1,5 @@
-import os
 import io
 import re
-import random
 
 from torchtext import data
 from nltk.tokenize import TweetTokenizer

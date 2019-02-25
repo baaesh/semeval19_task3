@@ -48,7 +48,7 @@ def getStatistics(dataFilePath, mode='train'):
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
-    parser.add_argument('--name', default='test.txt')
+    parser.add_argument('--name', default='../data/raw/test.txt')
     args = parser.parse_args()
 
     getStatistics(args.name, 'train')
