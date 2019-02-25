@@ -19,59 +19,37 @@ def getStatistics(dataFilePath, mode):
     indices = []
     conversations = []
     labels = []
-    with io.open(dataFilePath, encoding="utf8") as finput:
-        finput.readline()
-        for line in finput:
-            # Convert multiple instances of . ? ! , to single instance
-            # okay...sure -> okay . sure
-            # okay???sure -> okay ? sure
-            # Add whitespace around such punctuation
-            # okay!sure -> okay ! sure
-            repeatedChars = ['.', '?', '!', ',']
-            for c in repeatedChars:
-                lineSplit = line.split(c)
-                while True:
-                    try:
-                        lineSplit.remove('')
-                    except:
-                        break
-                cSpace = ' ' + c + ' '
-                line = cSpace.join(lineSplit)
-
-            line = line.strip().split('\t')
-            if mode == "train":
-                # Train data contains id, 3 turns and label
-                label = emotion2label[line[4]]
-                labels.append(label)
-
-            conv = ' <eos> '.join(line[1:4])
-
-            # Remove any duplicate spaces
-            duplicateSpacePattern = re.compile(r'\ +')
-            conv = re.sub(duplicateSpacePattern, ' ', conv)
-
-            indices.append(int(line[0]))
-            conversations.append(conv.lower())
 
     count = 0
     happy = 0
     sad = 0
     angry = 0
-    others =0
-    for i in range(len(labels)):
-        if labels[i] == 0:
-            others += 1
-        elif labels[i] == 1:
-            happy += 1
-        elif labels[i] == 2:
-            sad += 1
-        elif labels[i] == 3:
-            angry += 1
+    others = 0
+    with io.open(dataFilePath, encoding="utf8") as finput:
+        finput.readline()
+        for line in finput:
+            line = line.strip().split('\t')
+            label = line[4]
+            if label == 'others':
+                others += 1
+            elif label == 'happy':
+                happy += 1
+            elif label == 'sad':
+                sad += 1
+            elif label == 'angry':
+                angry += 1
+            else:
+                print('error: ' + label)
+            count += 1
 
-    print('ohers: ' + str(others/len(labels)))
-    print('happy: ' + str(happy/len(labels)))
-    print('sad: ' + str(sad/len(labels)))
-    print('angry: ' + str(angry/len(labels)))
+    print('ohers: ' + str(others/count))
+    print(others)
+    print('happy: ' + str(happy/count))
+    print(happy)
+    print('sad: ' + str(sad/count))
+    print(sad)
+    print('angry: ' + str(angry/count))
+    print(angry)
     return count
 
 
