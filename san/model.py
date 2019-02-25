@@ -19,6 +19,170 @@ def get_rep_mask(lengths, device):
     return rep_mask.unsqueeze_(-1)
 
 
+class NN4EMO_SEMI_HIERARCHICAL(nn.Module):
+
+    def __init__(self, args, data, ss_vectors=None):
+        super(NN4EMO_SEMI_HIERARCHICAL, self).__init__()
+
+        self.args = args
+        self.class_size = args.class_size
+        self.dropout = args.dropout
+        self.d_e = args.d_e
+        self.d_ff = args.d_ff
+        self.device = args.device
+
+        # GloVe embedding
+        self.glove_emb = nn.Embedding(args.word_vocab_size, args.word_dim)
+        # initialize word embedding with GloVe
+        self.glove_emb.weight.data.copy_(data.TEXT.vocab.vectors)
+        # emojis init
+        with open('data/emoji/emoji-vectors.pkl', 'rb') as f:
+            emoji_vectors = pickle.load(f)
+            for i in range(args.word_vocab_size):
+                word = data.TEXT.vocab.itos[i]
+                if word in emoji_vectors:
+                    self.glove_emb.weight.data[i] = torch.tensor(emoji_vectors[word])
+        if args.datastories:
+            embeddings_dict = build_datastories_vectors(data)
+            for word in embeddings_dict:
+                index = data.TEXT.vocab.stoi[word]
+                self.glove_emb.weight.data[index] = torch.tensor(embeddings_dict[word])
+        # fine-tune the word embedding
+        if not args.tune_embeddings:
+            self.glove_emb.weight.requires_grad = False
+        # <unk> vectors is randomly initialized
+        nn.init.uniform_(self.glove_emb.weight.data[0], -0.05, 0.05)
+
+        # word2vec + emoji2vec embeddings
+        self.word2vec_emb = nn.Embedding(args.word_vocab_size, args.word_dim)
+        word2vec = gsm.KeyedVectors.load_word2vec_format('data/GoogleNews-vectors-negative300.bin', binary=True)
+        emoji2vec = gsm.KeyedVectors.load_word2vec_format('data/emoji/emoji2vec.bin', binary=True)
+        for i in range(args.word_vocab_size):
+            word = data.TEXT.vocab.itos[i]
+            if word in emoji.UNICODE_EMOJI and word in emoji2vec.vocab:
+                self.word2vec_emb.weight.data[i] = torch.tensor(emoji2vec[word])
+            elif word in word2vec.vocab:
+                self.word2vec_emb.weight.data[i] = torch.tensor(word2vec[word])
+            else:
+                nn.init.uniform_(self.word2vec_emb.weight.data[i], -0.05, 0.05)
+        if not args.word2vec_tune:
+            self.word2vec_emb.weight.requires_grad = False
+
+        # character embedding
+        self.char_emb = nn.Embedding(args.char_vocab_size, args.char_dim, padding_idx=0)
+        self.charCNN = CharCNN(args)
+
+        # utterance encoders
+        self.utterance_encoder_turn1 = SentenceEncoder(args, data)
+        if args.share_encoder:
+            self.utterance_encoder_turn2 = self.utterance_encoder_turn1
+            self.utterance_encoder_turn3 = self.utterance_encoder_turn1
+        else:
+            self.utterance_encoder_turn2 = SentenceEncoder(args, data)
+            self.utterance_encoder_turn3 = SentenceEncoder(args, data)
+
+        # hierarchical LSTM encoder
+        self.lstm_input_dim = 2 * 2 * args.d_e
+        self.hierarchical_lstm = LSTMEncoder(args, input_dim=self.lstm_input_dim,
+                                             last_hidden=True)
+
+        # feed-forward layers
+        # u1, u2, u3, u1 - u2 + u3 and output of lstm
+        self.fc_dim = 2 * 2 * args.d_e * 4 + 2 * args.lstm_hidden_dim
+        self.fc1 = nn.Linear(self.fc_dim, args.d_e)
+        self.fc2 = nn.Linear(self.fc_dim + args.d_e, args.d_e)
+        self.fc_out = nn.Linear(args.d_e, args.class_size)
+
+        self.layer_norm = nn.LayerNorm(args.d_e)
+        self.dropout = nn.Dropout(args.dropout)
+        self.relu = nn.ReLU()
+
+    def forward(self, batch):
+        batch_turn1 = batch.turn1
+        batch_turn2 = batch.turn2
+        batch_turn3 = batch.turn3
+        seq_turn1, lens_turn1 = batch_turn1
+        seq_turn2, lens_turn2 = batch_turn2
+        seq_turn3, lens_turn3 = batch_turn3
+
+        # raw inputs for ELMo
+        batch_raw_turn1 = batch.raw_turn1
+        batch_raw_turn2 = batch.raw_turn2
+        batch_raw_turn3 = batch.raw_turn3
+
+        # character inputs for charCNN
+        batch_char_turn1 = batch.char_turn1
+        batch_char_turn2 = batch.char_turn2
+        batch_char_turn3 = batch.char_turn3
+
+        # (batch, seq_len, word_dim)
+        x_turn1_1 = self.glove_emb(seq_turn1)
+        x_turn1_2 = self.word2vec_emb(seq_turn1)
+        x_turn2_1 = self.glove_emb(seq_turn2)
+        x_turn2_2 = self.word2vec_emb(seq_turn2)
+        x_turn3_1 = self.glove_emb(seq_turn3)
+        x_turn3_2 = self.word2vec_emb(seq_turn3)
+
+        # character embedding
+        # (batch, seq_len, max_word_len)
+        batch_size, seq_len_turn1, _ = batch_char_turn1.size()
+        batch_size, seq_len_turn2, _ = batch_char_turn2.size()
+        batch_size, seq_len_turn3, _ = batch_char_turn3.size()
+
+        # (batch * seq_len, max_word_len)
+        char_turn1 = batch_char_turn1.view(-1, self.args.max_word_len)
+        char_turn2 = batch_char_turn2.view(-1, self.args.max_word_len)
+        char_turn3 = batch_char_turn3.view(-1, self.args.max_word_len)
+
+        # (batch * seq_len, max_word_len, char_dim)
+        char_turn1 = self.char_emb(char_turn1)
+        char_turn2 = self.char_emb(char_turn2)
+        char_turn3 = self.char_emb(char_turn3)
+
+        # (batch, seq_len, len(FILTER_SIZES) * num_feature_maps)
+        char_turn1 = self.charCNN(char_turn1).view(batch_size, seq_len_turn1, -1)
+        char_turn2 = self.charCNN(char_turn2).view(batch_size, seq_len_turn2, -1)
+        char_turn3 = self.charCNN(char_turn3).view(batch_size, seq_len_turn3, -1)
+
+        # (batch, seq_len, 1)
+        rep_mask_turn1 = get_rep_mask(lens_turn1, self.device)
+        rep_mask_turn2 = get_rep_mask(lens_turn2, self.device)
+        rep_mask_turn3 = get_rep_mask(lens_turn3, self.device)
+
+        # (batch, seq_len, 4 * d_e)
+        u_turn1 = self.utterance_encoder_turn1(x_turn1_1, x_turn1_2,
+                                               char_turn1,
+                                               batch_raw_turn1,
+                                               rep_mask_turn1,
+                                               lens_turn1, seq_turn1)
+        u_turn2 = self.utterance_encoder_turn2(x_turn2_1, x_turn2_2,
+                                               char_turn2,
+                                               batch_raw_turn2,
+                                               rep_mask_turn2,
+                                               lens_turn2, seq_turn2)
+        u_turn3 = self.utterance_encoder_turn3(x_turn3_1, x_turn3_2,
+                                               char_turn3,
+                                               batch_raw_turn3,
+                                               rep_mask_turn3,
+                                               lens_turn3, seq_turn3)
+
+        hierarchical_lstm_in = torch.stack([u_turn1, u_turn2, u_turn3], dim=1)
+        hierarchical_lstm_lens = torch.LongTensor([3]*hierarchical_lstm_in.size()[0])
+        hierarchical_lstm_out = self.hierarchical_lstm(hierarchical_lstm_in,
+                                                       hierarchical_lstm_lens)
+
+        u = torch.cat([u_turn1, u_turn2, u_turn3, u_turn1 - u_turn2 + u_turn3,
+                       hierarchical_lstm_out], dim=-1)
+
+        outputs = self.fc1(u)
+        outputs = self.relu(outputs)
+        outputs = self.fc2(torch.cat([u, outputs], dim=-1))
+        outputs = self.relu(outputs)
+        outputs = self.fc_out(outputs)
+
+        return outputs
+
+
 class NN4EMO(nn.Module):
 
     def __init__(self, args, data, ss_vectors=None):
@@ -282,10 +446,10 @@ class NN4EMO_ENSEMBLE(nn.Module):
         return (out1 + out2 + out3) / 3
 
 
-class NN4EMO_SEPERATE(nn.Module):
+class NN4EMO_SEPARATE(nn.Module):
 
     def __init__(self, args, data, ss_vectors=None):
-        super(NN4EMO_SEPERATE, self).__init__()
+        super(NN4EMO_SEPARATE, self).__init__()
 
         self.args = args
         self.class_size = args.class_size

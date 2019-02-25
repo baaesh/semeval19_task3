@@ -13,7 +13,7 @@ from torchtext import data
 
 from config import set_args
 from data import EMO, EMO_test
-from model import NN4EMO, NN4EMO_FUSION, NN4EMO_ENSEMBLE, NN4EMO_SEPERATE
+from model import *
 from test import test
 from loss import *
 from statistics import getStatistics
@@ -30,10 +30,10 @@ def train(args, data):
         model = NN4EMO_FUSION(args, data, ss_vectors).to(device)
     elif args.ensemble:
         model = NN4EMO_ENSEMBLE(args, data, ss_vectors).to(device)
-    elif args.seperate:
-        model = NN4EMO_SEPERATE(args, data, ss_vectors).to(device)
+    elif args.separate:
+        model = NN4EMO_SEPARATE(args, data, ss_vectors).to(device)
     else:
-        model = NN4EMO(args, data, ss_vectors).to(device)
+        model = NN4EMO_SEMI_HIERARCHICAL(args, data, ss_vectors).to(device)
 
     parameters = filter(lambda p: p.requires_grad, model.parameters())
     optimizer = optim.Adam(parameters, lr=args.learning_rate)
@@ -81,7 +81,7 @@ def train(args, data):
                     char_s = torch.LongTensor(data.characterize(batch.sent[0])).to(device)
                     setattr(batch, 'char_c', char_c)
                     setattr(batch, 'char_s', char_s)
-                elif args.seperate:
+                elif args.separate:
                     char_turn1 = torch.LongTensor(data.characterize(batch.turn1[0])).to(device)
                     char_turn2 = torch.LongTensor(data.characterize(batch.turn2[0])).to(device)
                     char_turn3 = torch.LongTensor(data.characterize(batch.turn3[0])).to(device)
@@ -171,7 +171,7 @@ def predict(model, args, data):
                 char_s = torch.LongTensor(data.characterize(batch.sent[0])).to(args.device)
                 setattr(batch, 'char_c', char_c)
                 setattr(batch, 'char_s', char_s)
-            elif args.seperate:
+            elif args.separate:
                 char_turn1 = torch.LongTensor(data.characterize(batch.turn1[0])).to(args.device)
                 char_turn2 = torch.LongTensor(data.characterize(batch.turn2[0])).to(args.device)
                 char_turn3 = torch.LongTensor(data.characterize(batch.turn3[0])).to(args.device)
@@ -204,10 +204,10 @@ def submission(args, model_name):
         model = NN4EMO_FUSION(args, data).to(device)
     elif args.ensemble:
         model = NN4EMO_ENSEMBLE(args, data).to(device)
-    elif args.seperate:
-        model = NN4EMO_SEPERATE(args, data).to(device)
+    elif args.separate:
+        model = NN4EMO_SEPARATE(args, data).to(device)
     else:
-        model = NN4EMO(args, data).to(device)
+        model = NN4EMO_SEMI_HIERARCHICAL(args, data).to(device)
 
     model.load_state_dict(torch.load('./saved_models/' + model_name))
 
