@@ -1,7 +1,7 @@
 import numpy as np
 import torch
 from keras.utils import to_categorical
-from statistics import getStatistics
+from utils.statistics import getStatistics
 
 def test(model, data, iterator, criterion, args):
     model.eval()

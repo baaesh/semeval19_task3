@@ -6,9 +6,8 @@ import random
 from torchtext import data
 from nltk.tokenize import TweetTokenizer
 from ekphrasis.classes.tokenizer import SocialTokenizer
-from oversample import oversampling
-from undersample import undersampling
-from preprocess import remove_duplicated_emojis
+from utils.sampling import oversampling, undersampling
+from utils.preprocess import remove_duplicated_emojis
 
 class EMO(data.Dataset):
 

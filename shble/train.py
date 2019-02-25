@@ -16,7 +16,7 @@ from data import EMO, EMO_test
 from model import *
 from test import test
 from loss import *
-from statistics import getStatistics
+from utils.statistics import getStatistics
 
 
 def train(args, data):
