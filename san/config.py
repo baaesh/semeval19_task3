@@ -18,7 +18,7 @@ def model_config(parser):
     parser.add_argument('--no_elmo_feed_forward', dest='elmo_feed_forward', action='store_false')
     parser.add_argument('--elmo_dim', type=int, default=1024)
 
-    parser.add_argument('--char_emb', default=False, action='store_true')
+    parser.add_argument('--no_char_emb', dest='char_emb', action='store_false')
     parser.add_argument('--char-dim', default=15, type=int)
     parser.add_argument('--num-feature-maps', default=100, type=int)
 
@@ -26,9 +26,9 @@ def model_config(parser):
     parser.add_argument('--ss_emb_tune', default=False, action='store_true')
     parser.add_argument('--fasttext', default=False, action='store_true')
     parser.add_argument('--fasttext_tune', default=False, action='store_true')
-    parser.add_argument('--word2vec', default=False, action='store_true')
+    parser.add_argument('--no_word2vec', dest='word2vec', action='store_false')
     parser.add_argument('--word2vec_tune', default=False, action='store_true')
-    parser.add_argument('--datastories', default=False, action='store_true')
+    parser.add_argument('--no_datastories', dest='datastories', action='store_false')
 
     parser.add_argument('--no_lstm_bidirection', dest='lstm_bidirection', action='store_false')
     parser.add_argument('--lstm_num_layers', type=int, default=2)
@@ -50,9 +50,9 @@ def model_config(parser):
 
 
 def data_config(parser):
-    parser.add_argument('--train_data_path', default='data/train.txt')
-    parser.add_argument('--valid_data_path', default='data/dev.txt')
-    parser.add_argument('--test_data_path', default='data/raw/testwithoutlabels.txt')
+    parser.add_argument('--train_data_path', default='data/raw/train.txt')
+    parser.add_argument('--valid_data_path', default='data/raw/dev.txt')
+    parser.add_argument('--test_data_path', default='data/raw/test.txt')
     parser.add_argument('--elmo_option_path', default='data/elmo/elmo_options.json')
     parser.add_argument('--elmo_weight_path', default='data/elmo/elmo_weights.hdf5')
     parser.add_argument('--ss_vector_path', default='data/sswe/sswe.pt')

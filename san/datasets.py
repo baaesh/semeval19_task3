@@ -15,7 +15,7 @@ class EMO(data.Dataset):
     def sort_key(ex):
         return len(ex.text)
 
-    def __init__(self, args, raw_field, text_field, label_field, examples=None, path=None, mode='train', **kwargs):
+    def __init__(self, args, raw_field, text_field, label_field, examples=None, path=None, mode='train', sampling=None, **kwargs):
         """Create an dataset instance given a path and fields.
         Arguments:
             text_field: The field that will be used for text data.
@@ -55,7 +55,7 @@ class EMO(data.Dataset):
                       ('turn3', text_field)]
 
         if examples is None:
-            dataset = self.preprocessData(args, path, mode)
+            dataset = self.preprocessData(args, path, mode, sampling)
             examples = []
             if mode == 'train':
                 examples += [

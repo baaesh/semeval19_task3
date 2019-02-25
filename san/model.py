@@ -65,7 +65,7 @@ class NN4EMO_SEMI_HIERARCHICAL(nn.Module):
                 self.word2vec_emb.weight.data[i] = torch.tensor(word2vec[word])
             else:
                 nn.init.uniform_(self.word2vec_emb.weight.data[i], -0.05, 0.05)
-        if not args.word2vec_tune:
+        if not args.tune_embeddings:
             self.word2vec_emb.weight.requires_grad = False
 
         # character embedding
