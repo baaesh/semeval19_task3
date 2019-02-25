@@ -259,23 +259,6 @@ def build_sswe_vectors():
     torch.save(vectors, 'data/sswe/sswe.pt')
 
 
-def build_datastories_vectors(data):
-    vector_path = 'data/datastories/datastories.twitter.300d.txt'
-
-    if os.path.exists(vector_path):
-        print('Indexing file datastories.twitter.300d.txt ...')
-        embeddings_dict = {}
-        with open(vector_path, "r", encoding="utf-8") as f:
-            for i, line in enumerate(f):
-                values = line.split()
-                word = values[0]
-                if word in data.TEXT.vocab.stoi:
-                    coefs = np.asarray(values[1:], dtype='float32')
-                    embeddings_dict[word] = coefs
-
-        print('Found %s word vectors.' % len(embeddings_dict))
-
-
 def main():
     args = set_args()
 
@@ -292,7 +275,8 @@ def main():
 
     print('Vocab Size: ' + str(len(data.TEXT.vocab)))
 
-    build_sswe_vectors()
+    if args.ss_emb:
+        build_sswe_vectors()
 
     best_model, max_test_acc, max_test_f1 = train(args, data)
 
