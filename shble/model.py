@@ -55,7 +55,7 @@ class NN4EMO_SEMI_HIERARCHICAL(nn.Module):
 
         # word2vec + emoji2vec embeddings
         self.word2vec_emb = nn.Embedding(args.word_vocab_size, args.word_dim)
-        word2vec = gsm.KeyedVectors.load_word2vec_format('data/GoogleNews-vectors-negative300.bin', binary=True)
+        word2vec = gsm.KeyedVectors.load_word2vec_format('data/word2vec/GoogleNews-vectors-negative300.bin', binary=True)
         emoji2vec = gsm.KeyedVectors.load_word2vec_format('data/emoji/emoji2vec.bin', binary=True)
         for i in range(args.word_vocab_size):
             word = data.TEXT.vocab.itos[i]
@@ -228,7 +228,7 @@ class NN4EMO(nn.Module):
             if not args.fasttext_tune:
                 self.ss_emb.weight.requires_grad = False
         if args.word2vec:
-            word2vec = gsm.KeyedVectors.load_word2vec_format('data/GoogleNews-vectors-negative300.bin', binary=True)
+            word2vec = gsm.KeyedVectors.load_word2vec_format('data/word2vec/GoogleNews-vectors-negative300.bin', binary=True)
             emoji2vec = gsm.KeyedVectors.load_word2vec_format('data/emoji/emoji2vec.bin', binary=True)
             for i in range(args.word_vocab_size):
                 word = data.TEXT.vocab.itos[i]
@@ -339,7 +339,7 @@ class NN4EMO_FUSION(nn.Module):
             if not args.fasttext_tune:
                 self.ss_emb.weight.requires_grad = False
         if args.word2vec:
-            word2vec = gsm.KeyedVectors.load_word2vec_format('data/GoogleNews-vectors-negative300.bin', binary=True)
+            word2vec = gsm.KeyedVectors.load_word2vec_format('data/word2vec/GoogleNews-vectors-negative300.bin', binary=True)
             emoji2vec = gsm.KeyedVectors.load_word2vec_format('data/emoji/emoji2vec.bin', binary=True)
             for i in range(args.word_vocab_size):
                 word = data.TEXT.vocab.itos[i]
@@ -475,7 +475,7 @@ class NN4EMO_SEPARATE(nn.Module):
             if not args.fasttext_tune:
                 self.ss_emb.weight.requires_grad = False
         if args.word2vec:
-            word2vec = gsm.KeyedVectors.load_word2vec_format('data/GoogleNews-vectors-negative300.bin', binary=True)
+            word2vec = gsm.KeyedVectors.load_word2vec_format('data/word2vec/GoogleNews-vectors-negative300.bin', binary=True)
             emoji2vec = gsm.KeyedVectors.load_word2vec_format('data/emoji/emoji2vec.bin', binary=True)
             for i in range(args.word_vocab_size):
                 word = data.TEXT.vocab.itos[i]
