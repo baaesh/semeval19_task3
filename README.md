@@ -1,4 +1,13 @@
 # Semi-Hierarchical Bi-LSTM Encoder (SHBLE) for SemEval-Task3 EmoContext
+This is the implementation of Semi-Hierarchical Bi-LSTM Encoder (SHBLE), for SemEval-2019 Task 3 - EmoContext: Contextual Emotion Detection in Text.
+
+The descriptions will be included in this following paper.
+
+    @article{bae2019snu_ids,
+        title={SNU\_IDS at SemEval-2019 Task 3: Addressing Training-Test Class Distribution Mismatch in Conversational Classification},
+        author={Bae, Sanghwan and Choi, Jihun and Lee, Sang-goo},
+        year={2019}
+    }
 
 ## Results
 Dataset: [EmoContext](https://www.humanizing-ai.com/emocontext.html)
