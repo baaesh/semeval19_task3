@@ -1,6 +1,7 @@
 import numpy as np
 import torch
 from keras.utils import to_categorical
+from statistics import getStatistics
 
 def test(model, data, iterator, criterion, args):
     model.eval()
@@ -11,11 +12,13 @@ def test(model, data, iterator, criterion, args):
         happy_idx = data.LABEL.vocab.stoi['happy']
         sad_idx = data.LABEL.vocab.stoi['sad']
         angry_idx = data.LABEL.vocab.stoi['angry']
-        reverse_prior = [0.1] * args.class_size
-        reverse_prior[others_idx] = 0.848 / 0.495
-        reverse_prior[happy_idx] = 0.051 / 0.14
-        reverse_prior[sad_idx] = 0.045 / 0.181
-        reverse_prior[angry_idx] = 0.054 / 0.182
+        train_dist = getStatistics(args.train_data_path, 'train')
+        valid_dist = getStatistics(args.valid_data_path, 'valid')
+        reverse_prior = [1.0] * args.class_size
+        reverse_prior[others_idx] = valid_dist[0] / train_dist[0]
+        reverse_prior[happy_idx] = valid_dist[1] / train_dist[1]
+        reverse_prior[sad_idx] = valid_dist[2] / train_dist[2]
+        reverse_prior[angry_idx] = train_dist[3] / train_dist[3]
         reverse_prior = torch.tensor(reverse_prior)
 
     preds = []

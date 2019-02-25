@@ -1,12 +1,8 @@
 import io
-import re
 import argparse
 
-label2emotion = {0: "others", 1: "happy", 2: "sad", 3: "angry"}
-emotion2label = {"others": 0, "happy": 1, "sad": 2, "angry": 3}
 
-
-def getStatistics(dataFilePath, mode):
+def getStatistics(dataFilePath, mode='train'):
     """Load data from a file, process and return indices, conversations and labels in separate lists
     Input:
         dataFilePath : Path to train/test file to be processed
@@ -16,10 +12,6 @@ def getStatistics(dataFilePath, mode):
         conversations : List of 3 turn conversations, processed and each turn separated by the <eos> tag
         labels : [Only available in "train" mode] List of labels
     """
-    indices = []
-    conversations = []
-    labels = []
-
     count = 0
     happy = 0
     sad = 0
@@ -42,6 +34,7 @@ def getStatistics(dataFilePath, mode):
                 print('error: ' + label)
             count += 1
 
+    print(mode + ' class distribution')
     print('ohers: ' + str(others/count))
     print(others)
     print('happy: ' + str(happy/count))
@@ -50,7 +43,7 @@ def getStatistics(dataFilePath, mode):
     print(sad)
     print('angry: ' + str(angry/count))
     print(angry)
-    return count
+    return [others/count, happy/count, sad/count, angry/count]
 
 
 if __name__ == '__main__':

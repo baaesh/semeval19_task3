@@ -15,7 +15,8 @@ from config import set_args
 from data import EMO, EMO_test
 from model import NN4EMO, NN4EMO_FUSION, NN4EMO_ENSEMBLE, NN4EMO_SEPERATE
 from test import test
-from loss import FocalLoss, MFELoss, MSFELoss, AMFELoss, AMSFELoss, ModifiedMFELoss
+from loss import *
+from statistics import getStatistics
 
 
 def train(args, data):
@@ -37,24 +38,21 @@ def train(args, data):
     parameters = filter(lambda p: p.requires_grad, model.parameters())
     optimizer = optim.Adam(parameters, lr=args.learning_rate)
     scheduler = StepLR(optimizer, step_size=10, gamma=args.lr_gamma)
-    if args.fl_loss:
+    if args.wce_loss:
         others_idx = data.LABEL.vocab.stoi['others']
-        if args.fl_alpha is not None:
-            alpha = [(1.-args.fl_alpha)/3.] * args.class_size
-            alpha[others_idx] = args.fl_alpha
-        else:
-            others_idx = data.LABEL.vocab.stoi['others']
-            happy_idx = data.LABEL.vocab.stoi['happy']
-            sad_idx = data.LABEL.vocab.stoi['sad']
-            angry_idx = data.LABEL.vocab.stoi['angry']
-            alpha = [1.0] * args.class_size
-            alpha[others_idx] = 0.848 / 0.495
-            alpha[happy_idx] = 0.051 / 0.14
-            alpha[sad_idx] = 0.045 / 0.181
-            alpha[angry_idx] = 0.054 / 0.182
+        happy_idx = data.LABEL.vocab.stoi['happy']
+        sad_idx = data.LABEL.vocab.stoi['sad']
+        angry_idx = data.LABEL.vocab.stoi['angry']
+        train_dist = getStatistics(args.train_data_path, 'train')
+        valid_dist = getStatistics(args.valid_data_path, 'valid')
+        alpha = [1.0] * args.class_size
+        alpha[others_idx] = valid_dist[0] / train_dist[0]
+        alpha[happy_idx] = valid_dist[1] / train_dist[1]
+        alpha[sad_idx] = valid_dist[2] / train_dist[2]
+        alpha[angry_idx] = valid_dist[3] / train_dist[3]
 
-        criterion = FocalLoss(gamma=args.fl_gamma,
-                               alpha=alpha, size_average=True).to(device)
+        criterion = WeightedCrossEntropyLoss(alpha=alpha,
+                                             size_average=True).to(device)
     else:
         criterion = nn.CrossEntropyLoss()
 
@@ -157,11 +155,13 @@ def predict(model, args, data):
         happy_idx = data.LABEL.vocab.stoi['happy']
         sad_idx = data.LABEL.vocab.stoi['sad']
         angry_idx = data.LABEL.vocab.stoi['angry']
-        reverse_prior = [0.1] * args.class_size
-        reverse_prior[others_idx] = 0.848 / 0.495
-        reverse_prior[happy_idx] = 0.051 / 0.14
-        reverse_prior[sad_idx] = 0.045 / 0.181
-        reverse_prior[angry_idx] = 0.054 / 0.182
+        train_dist = getStatistics(args.train_data_path, 'train')
+        valid_dist = getStatistics(args.valid_data_path, 'valid')
+        reverse_prior = [1.0] * args.class_size
+        reverse_prior[others_idx] = valid_dist[0] / train_dist[0]
+        reverse_prior[happy_idx] = valid_dist[1] / train_dist[1]
+        reverse_prior[sad_idx] = valid_dist[2] / train_dist[2]
+        reverse_prior[angry_idx] = train_dist[3] / train_dist[3]
         reverse_prior = torch.tensor(reverse_prior)
 
     for batch in iter(iterator):

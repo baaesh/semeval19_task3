@@ -75,12 +75,12 @@ def train_config(parser):
     parser.add_argument('--max_epoch', type=int, default=10)
     parser.add_argument('--print_every', type=int, default=100)
     parser.add_argument('--validate_every', type=int, default=100)
-    parser.add_argument('--no_fl_loss', dest='fl_loss', action='store_false')
-    parser.add_argument('--fl_gamma', type=float, default=0.0)
-    parser.add_argument('--fl_alpha', type=float, default=None)
+    parser.add_argument('--oversampling', default=False, action='store_true')
+    parser.add_argument('--undersampling', default=False, action='store_true')
+    parser.add_argument('--wce_loss', default=False, action='store_true')
+    parser.add_argument('--thresholding', default=False, action='store_true')
     parser.add_argument('--mfe_loss', default=False, action='store_true')
     parser.add_argument('--mfe_alpha', type=float, default=0.75)
-    parser.add_argument('--thresholding', default=False, action='store_true')
     parser.add_argument('--name_tag', default='')
 
     return parser
