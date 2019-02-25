@@ -1,4 +1,4 @@
-# Semi-Hierarchical Bi-LSTM Encoder for SemEval-Task3 (EmoContext)
+# Semi-Hierarchical Bi-LSTM Encoder (SHBLE) for SemEval-Task3 EmoContext
 
 ## Development Environment
 - OS: Ubuntu 16.04 LTS (64bit)
