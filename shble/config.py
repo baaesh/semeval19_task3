@@ -53,8 +53,8 @@ def data_config(parser):
     parser.add_argument('--train_data_path', default='data/raw/train.txt')
     parser.add_argument('--valid_data_path', default='data/raw/dev.txt')
     parser.add_argument('--test_data_path', default='data/raw/test.txt')
-    parser.add_argument('--elmo_option_path', default='data/elmo/elmo_options.json')
-    parser.add_argument('--elmo_weight_path', default='data/elmo/elmo_weights.hdf5')
+    parser.add_argument('--elmo_option_path', default='data/elmo/elmo_2x4096_512_2048cnn_2xhighway_options.json')
+    parser.add_argument('--elmo_weight_path', default='data/elmo/elmo_2x4096_512_2048cnn_2xhighway_weights.hdf5')
     parser.add_argument('--ss_vector_path', default='data/sswe/sswe.pt')
     parser.add_argument('--no_emoji_preprocess', dest='remove_duplicated_emojis', action='store_false')
 
