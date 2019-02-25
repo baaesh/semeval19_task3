@@ -430,22 +430,6 @@ class NN4EMO_FUSION(nn.Module):
         return outputs
 
 
-class NN4EMO_ENSEMBLE(nn.Module):
-
-    def __init__(self, args, data, ss_vectors=None):
-        super(NN4EMO_ENSEMBLE, self).__init__()
-        self.nn4emo = NN4EMO(args, data, ss_vectors)
-        self.nn4emo_fusion = NN4EMO_FUSION(args, data, ss_vectors)
-        self.nn4emo_seperate = NN4EMO_SEPERATE(args, data, ss_vectors)
-
-    def forward(self, batch):
-        out1 = self.nn4emo(batch)
-        out2 = self.nn4emo_fusion(batch)
-        out3 = self.nn4emo_seperate(batch)
-
-        return (out1 + out2 + out3) / 3
-
-
 class NN4EMO_SEPARATE(nn.Module):
 
     def __init__(self, args, data, ss_vectors=None):

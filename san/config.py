@@ -46,8 +46,6 @@ def model_config(parser):
 
     parser.add_argument('--biattention', default=False, action='store_true')
 
-    parser.add_argument('--ensemble', default=False, action='store_true')
-
     return parser
 
 

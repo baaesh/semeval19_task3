@@ -28,8 +28,6 @@ def train(args, data):
     device = torch.device(args.device)
     if args.fusion:
         model = NN4EMO_FUSION(args, data, ss_vectors).to(device)
-    elif args.ensemble:
-        model = NN4EMO_ENSEMBLE(args, data, ss_vectors).to(device)
     elif args.separate:
         model = NN4EMO_SEPARATE(args, data, ss_vectors).to(device)
     else:
@@ -202,8 +200,6 @@ def submission(args, model_name):
     device = torch.device(args.device)
     if args.fusion:
         model = NN4EMO_FUSION(args, data).to(device)
-    elif args.ensemble:
-        model = NN4EMO_ENSEMBLE(args, data).to(device)
     elif args.separate:
         model = NN4EMO_SEPARATE(args, data).to(device)
     else:
