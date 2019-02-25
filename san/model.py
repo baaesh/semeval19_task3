@@ -73,13 +73,13 @@ class NN4EMO_SEMI_HIERARCHICAL(nn.Module):
         self.charCNN = CharCNN(args)
 
         # utterance encoders
-        self.utterance_encoder_turn1 = SentenceEncoder(args, data)
+        self.utterance_encoder_turn1 = UtteranceEncoder(args, data)
         if args.share_encoder:
             self.utterance_encoder_turn2 = self.utterance_encoder_turn1
             self.utterance_encoder_turn3 = self.utterance_encoder_turn1
         else:
-            self.utterance_encoder_turn2 = SentenceEncoder(args, data)
-            self.utterance_encoder_turn3 = SentenceEncoder(args, data)
+            self.utterance_encoder_turn2 = UtteranceEncoder(args, data)
+            self.utterance_encoder_turn3 = UtteranceEncoder(args, data)
 
         # hierarchical LSTM encoder
         self.lstm_input_dim = 2 * 2 * args.d_e
@@ -154,17 +154,17 @@ class NN4EMO_SEMI_HIERARCHICAL(nn.Module):
                                                char_turn1,
                                                batch_raw_turn1,
                                                rep_mask_turn1,
-                                               lens_turn1, seq_turn1)
+                                               lens_turn1)
         u_turn2 = self.utterance_encoder_turn2(x_turn2_1, x_turn2_2,
                                                char_turn2,
                                                batch_raw_turn2,
                                                rep_mask_turn2,
-                                               lens_turn2, seq_turn2)
+                                               lens_turn2)
         u_turn3 = self.utterance_encoder_turn3(x_turn3_1, x_turn3_2,
                                                char_turn3,
                                                batch_raw_turn3,
                                                rep_mask_turn3,
-                                               lens_turn3, seq_turn3)
+                                               lens_turn3)
 
         hierarchical_lstm_in = torch.stack([u_turn1, u_turn2, u_turn3], dim=1)
         hierarchical_lstm_lens = torch.LongTensor([3]*hierarchical_lstm_in.size()[0])

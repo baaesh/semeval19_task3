@@ -677,3 +677,45 @@ class UniEncoder(nn.Module):
             pool_s = pooling(h * rep_mask).view(batch, -1)
             s2t_s = self.s2t_SA(h, rep_mask)
             return torch.cat([s2t_s, pool_s], dim=-1)
+
+
+class UtteranceEncoder(nn.Module):
+
+    def __init__(self, args, data):
+        super(UtteranceEncoder, self).__init__()
+        self.args = args
+        self.device = args.device
+
+        # shortcut-stacked bi-LSTM encoder
+        self.glove_lstm = LSTMEncoder(args, input_dim=args.word_dim * 2)
+        self.word2vec_lstm = LSTMEncoder(args, input_dim=args.word_dim * 2)
+
+        self.elmo = ELMo(args)
+
+        # Multi-dimensional source2token self-attention
+        self.s2t_SA = Source2Token(d_h=2 * args.d_e, dropout=args.dropout)
+
+        self.dropout = nn.Dropout(args.dropout)
+
+
+    def forward(self, inputs_glove, inputs_word2vec, inputs_char, batch_raw, rep_mask, lengths):
+        batch, seq_len, d_e = inputs_glove.size()
+
+        elmo_emb = self.elmo(batch_raw)[0]
+        inputs_glove = torch.cat([inputs_glove, elmo_emb], dim=-1)
+
+        # character embedding
+        if self.args.char_emb:
+            inputs_word2vec = torch.cat([inputs_word2vec, inputs_char], dim=-1)
+
+        c_g = self.glove_lstm(self.dropout(inputs_glove), lengths)
+        c_s = self.word2vec_lstm(self.dropout(inputs_word2vec), lengths)
+
+        c = torch.cat([c_g, c_s], dim=-1)
+
+        pooling = nn.MaxPool2d((seq_len, 1), stride=1)
+        pool_c = pooling(c * rep_mask).view(batch, -1)
+        s2t_c = self.s2t_SA(c, rep_mask)
+
+        outs = torch.cat([s2t_c, pool_c], dim=-1)
+        return outs
