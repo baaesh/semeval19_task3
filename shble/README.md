@@ -15,6 +15,22 @@ and [weights](https://s3-us-west-2.amazonaws.com/allennlp/models/elmo/2x4096_512
 You can train a model with default hyperparameters by just typing,
     
 > python train.py
+
+with oversampling, 
+
+> python train.py --oversampling
+
+with undersampling,
+
+> python train.py --undersampling
+
+with thresholding,
+
+> python train.py --thresholding
+
+and with cost-sensitive learning,
+
+> python train.py --wce_loss
     
 Also, there are other configures.
 
