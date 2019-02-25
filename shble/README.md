@@ -5,14 +5,26 @@ Dataset: [EmoContext](https://www.humanizing-ai.com/emocontext.html)
 
 Single Models
 
-| Model | Test Acc | std | Test micro F1 | std |
-| ----- | ------------ | ----------- | ----------- | ----------- |
+| Model | Test Acc | std | Test F1 | std |
+| ----- | ------------: | -----------: | -----------: | -----------: |
 | Baseline (organizers) | - | - | .587 | - |
 | Plain | .914 | .005 | .726 | .008 |
 | Oversampling | .922 | .004 | .733 | .012 |
 | Undersampling | .919 | .006 | .719 | .013 |
 | Thresholding | .924 | .002 | .738 | .010 |
 | Cost-Sensitive | .924 | .004 | .739 | .010 |
+
+
+Ensemble Models
+
+| Model | Test Acc | Test F1 |
+| ----- | ------------: | -----------: |
+| Plain | .921 | .743 |
+| Oversampling | .930 | .758 |
+| Undersampling | .930 | .753 |
+| Thresholding | .930 | .752 |
+| Cost-Sensitive | .931 | .757 |
+| Mixed (submitted) | .933 | .766 |
 
 ## Development Environment
 - OS: Ubuntu 16.04 LTS (64bit)
