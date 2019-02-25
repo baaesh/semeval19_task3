@@ -56,7 +56,7 @@ class EMO(data.Dataset):
                       ('turn3', text_field)]
 
         if examples is None:
-            dataset = self.preprocessData(args, path, mode, sampling)
+            dataset = self.preprocessData(args, path, mode)
             examples = []
             if mode == 'train':
                 examples += [
@@ -261,10 +261,6 @@ class EMO(data.Dataset):
             Remaining keyword arguments: Passed to the splits method of
                 Dataset.
         """
-        sampling = None
-        if args.oversampling: sampling = 'oversampling'
-        elif args.undersampling: sampling = 'undersampling'
-
         return (cls(args, raw_field, text_field, label_field, path=trainDataPath, mode='train', **kwargs),
                 cls(args, raw_field, text_field, label_field, path=validDataPath, mode='train', **kwargs),
                 cls(args, raw_field, text_field, label_field, path=testDataPath, mode='train', **kwargs))
