@@ -6,6 +6,7 @@ The description was included in this following paper. [link](https://arxiv.org/a
     @article{bae2019snu_ids,
         title={SNU\_IDS at SemEval-2019 Task 3: Addressing Training-Test Class Distribution Mismatch in Conversational Classification},
         author={Bae, Sanghwan and Choi, Jihun and Lee, Sang-goo},
+        journal={arXiv preprint arXiv:1903.02163},
         year={2019}
     }
 
