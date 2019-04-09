@@ -35,13 +35,6 @@ class NN4EMO_SEMI_HIERARCHICAL(nn.Module):
         self.glove_emb = nn.Embedding(args.word_vocab_size, args.word_dim)
         # initialize word embedding with GloVe
         self.glove_emb.weight.data.copy_(data.TEXT.vocab.vectors)
-        # emojis init
-        with open('data/emoji/emoji-vectors.pkl', 'rb') as f:
-            emoji_vectors = pickle.load(f)
-            for i in range(args.word_vocab_size):
-                word = data.TEXT.vocab.itos[i]
-                if word in emoji_vectors:
-                    self.glove_emb.weight.data[i] = torch.tensor(emoji_vectors[word])
         if args.datastories:
             embeddings_dict = build_datastories_vectors(data)
             for word in embeddings_dict:
